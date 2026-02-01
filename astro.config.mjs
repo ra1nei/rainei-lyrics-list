@@ -8,6 +8,9 @@ import { remarkAlert } from 'remark-github-blockquote-alert';
 export default defineConfig({
   integrations: [mdx()],
 
+  site: 'https://ra1nei.github.io',
+  base: '/rainei-lyrics-list',
+
   markdown: {
     remarkPlugins: [remarkAlert],
   },

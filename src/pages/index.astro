@@ -55,7 +55,7 @@ const initialCover = firstSong?.data.cover || firstSong?.data.logo || "";
       <div class="flex flex-col">
         {allSongs.map((song) => (
           <a 
-            href={`/songs/${song.slug}`}
+            href={`${import.meta.env.BASE_URL}/songs/${song.slug}`}
             class="song-row group flex items-center px-5 py-4 border-b border-slate-800/50 hover:bg-slate-800/60 hover:pl-8 transition-all duration-300 cursor-pointer"
             data-cover={song.data.cover || song.data.logo || ""} 
           >
