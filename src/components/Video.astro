@@ -1,0 +1,19 @@
+---
+const { src, poster } = Astro.props;
+
+const finalPoster = poster.startsWith('http') || poster.startsWith('/')
+  ? poster 
+  : `/thumbnail/${poster}`;
+---
+
+<div class="video-container my-8 rounded-lg overflow-hidden border border-slate-700 bg-black shadow-2xl">
+  <video 
+    controls 
+    preload="metadata" 
+    poster={finalPoster}
+    class="w-full aspect-video object-contain"
+  >
+    <source src={src} type="video/mp4" />
+    Your browser does not support the video tag.
+  </video>
+</div>
