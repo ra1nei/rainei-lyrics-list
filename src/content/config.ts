@@ -3,11 +3,12 @@ import { defineCollection, z } from 'astro:content';
 const songs = defineCollection({
   type: 'content',
   schema: z.object({
-    title: z.string(),
-    artist: z.string().optional(),
-    logo: z.string().optional(),
-    cover: z.string().optional(),
-    // Thêm các dòng khác nếu file md của ông có (ví dụ date, tag...)
+    title: z.string(),                                                        // Tựa bài hát
+    artist: z.string().optional(),                                            // Nghệ sĩ
+    cover: z.string().optional(),                                             // Cover cho bài hát
+    date: z.date().optional(),                                                // Ngày tạo trên web
+    type: z.enum(['OP', 'ED', 'INS', 'MISC']).optional(),                     // Loại của bài hát (VD: OP/ED)
+    season: z.string().optional(),                                            // Dùng để ghi đè tên hiển thị
   }),
 });
 
