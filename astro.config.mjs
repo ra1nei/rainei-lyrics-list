@@ -6,10 +6,12 @@ import { remarkAlert } from 'remark-github-blockquote-alert';
 
 // https://astro.build/config
 export default defineConfig({
-  integrations: [mdx()],
+  integrations: [
+    mdx(),
+  ],
 
-  site: 'https://ra1nei.github.io',
-  base: '/rainei-lyrics-list',
+  // site: 'https://ra1nei.github.io', 
+  // base: '/rainei-lyrics-list',
 
   markdown: {
     remarkPlugins: [remarkAlert],

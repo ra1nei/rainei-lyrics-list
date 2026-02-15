@@ -11,4 +11,4 @@
 Nếu có góp ý về lời dịch, bạn vui lòng **[mở Issue tại đây](https://github.com/ra1nei/rainei-lyrics-list/issues)**.
 
 ---
-Truy cập trang web tại [đây](https://ra1nei.github.io/rainei-lyrics-list/).
+Truy cập trang web tại [đây](https://rainei-lyrics-list.netlify.app/).

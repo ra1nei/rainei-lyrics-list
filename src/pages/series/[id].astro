@@ -45,6 +45,10 @@ Object.keys(groupedSongs).forEach(key => {
     assign(list.filter(s => s.data.type === 'OP'), 'OP');
     assign(list.filter(s => s.data.type === 'ED'), 'ED');
     assign(list.filter(s => s.data.type === 'INS'), 'INS');
+    const miscList = list.filter(s => !['OP', 'ED', 'INS'].includes(s.data.type));
+    if (miscList.length > 0) {
+        assign(miscList, 'MISC');
+    }
 });
 
 const sortedGroups = Object.keys(groupedSongs).sort();
@@ -157,7 +161,7 @@ const pageTitle = `${seriesInfo.vietnamese} (${seriesInfo.year})`;
 
     <aside class="hidden lg:flex lg:col-span-3 flex-col gap-4 sticky top-8 self-start">
       
-      <div class="flex justify-end w-full">
+      <div class="flex justify-start w-full">
         <a 
             href={import.meta.env.BASE_URL}
             class="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors bg-slate-900/50 px-4 py-2 rounded-full border border-slate-800 hover:border-sky-500/50 hover:bg-slate-800"
