@@ -45,7 +45,8 @@ Object.keys(groupedSongs).forEach(key => {
     assign(list.filter(s => s.data.type === 'OP'), 'OP');
     assign(list.filter(s => s.data.type === 'ED'), 'ED');
     assign(list.filter(s => s.data.type === 'INS'), 'INS');
-    const miscList = list.filter(s => !['OP', 'ED', 'INS'].includes(s.data.type));
+    assign(list.filter(s => s.data.type === 'MV'), 'MV');
+    const miscList = list.filter(s => !['OP', 'ED', 'INS', 'MV'].includes(s.data.type));
     if (miscList.length > 0) {
         assign(miscList, 'MISC');
     }
@@ -64,7 +65,7 @@ const formatHeading = (originalFolder) => {
   let result = "";
 
   if (cleanFolder === 'misc' || cleanFolder.includes('misc') || mappedName === 'Miscellaneous') {
-    result = 'LINH TINH'; 
+    result = 'MUSIC VIDEO'; 
   } else {
     const firstSongInGroup = groupedSongs[originalFolder][0];
     

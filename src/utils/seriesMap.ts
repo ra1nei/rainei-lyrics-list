@@ -39,5 +39,5 @@ export const SEASON_MAP: Record<string, string> = {
   "season-4": "Mùa 04",
   "movie": "Phim điện ảnh",
   "ova": "Tập đặc biệt",
-  "misc": "LINH TINH"
+  "misc": "MUSIC VIDEO"
 };
