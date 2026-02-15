@@ -1,0 +1,27 @@
+backend:
+  name: git-gateway # Dùng git-gateway để kết nối GitHub
+  branch: main # Nhánh chính của ông (thường là main hoặc master)
+
+# Thư mục chứa ảnh khi upload từ CMS
+media_folder: "public/covers" 
+public_folder: "/covers"
+
+# Cấu hình Tiếng Việt cho giao diện
+locale: 'vi'
+
+collections:
+  - name: "songs"
+    label: "Bài hát (Lyrics)"
+    folder: "src/content/songs" # Folder chứa MDX
+    create: true # Cho phép tạo bài mới
+    nested: # Cho phép folder con (quan trọng với cấu trúc frieren/01_season-1/...)
+      depth: 3 
+      summary: '{{title}}'
+    fields:
+      - {label: "Tiêu đề bài hát", name: "title", widget: "string"}
+      - {label: "Nghệ sĩ (Artist)", name: "artist", widget: "string", required: false}
+      - {label: "Loại (OP/ED/INS)", name: "type", widget: "select", options: ["OP", "ED", "INS", "OST"], required: false}
+      - {label: "Ngày phát hành", name: "date", widget: "datetime", format: "YYYY-MM-DD", date_format: "DD/MM/YYYY", time_format: false}
+      - {label: "Tên Mùa/Phim (Custom)", name: "season", widget: "string", required: false, hint: "Điền nếu muốn ghi đè tên mặc định (VD: Phần Tương Lai)"}
+      - {label: "Ảnh Cover", name: "cover", widget: "image", required: false}
+      - {label: "Nội dung (Lời/Video)", name: "body", widget: "markdown"}
