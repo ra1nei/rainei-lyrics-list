@@ -10,8 +10,8 @@ export default defineConfig({
     mdx(),
   ],
 
-  // site: 'https://ra1nei.github.io', 
-  // base: '/rainei-lyrics-list',
+  site: 'https://ra1nei.github.io', 
+  base: '/rainei-lyrics-list',
 
   markdown: {
     remarkPlugins: [remarkAlert],
