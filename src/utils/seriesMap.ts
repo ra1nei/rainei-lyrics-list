@@ -29,6 +29,12 @@ export const SERIES_MAP: Record<string, SeriesInfo> = {
     vietnamese: "Công Chúa Vũ Trụ Kaguya!",
     year: 2026,
     cover: "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx201903-v43gxQKw8Tc8.jpg"
+  },
+  "girls-band-cry": {
+    romaji: "Girls Band Cry",
+    vietnamese: "Tiếng Gào Ban Nhạc Nữ",
+    year: 2024,
+    cover: "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx164212-eKh15LQxkTEx.jpg"
   }
 };
 
