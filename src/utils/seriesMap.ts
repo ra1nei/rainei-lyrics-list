@@ -35,7 +35,13 @@ export const SERIES_MAP: Record<string, SeriesInfo> = {
     vietnamese: "Tiếng Gào Ban Nhạc Nữ",
     year: 2024,
     cover: "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx164212-eKh15LQxkTEx.jpg"
-  }
+  },
+  "tamako-love-story": {
+    romaji: "Tamako Love Story",
+    vietnamese: "Chuyện Tình Của Tamako",
+    year: 2014,
+    cover: "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20519-YdNUizVJJIWI.png"
+  },
 };
 
 export const SEASON_MAP: Record<string, string> = {
