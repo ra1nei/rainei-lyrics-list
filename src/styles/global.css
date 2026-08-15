@@ -23,6 +23,27 @@ body {
   background: linear-gradient(to bottom right, #0f172a, #1e1b4b);
 }
 
+/* Thanh cuộn dùng chung cho cả trang chủ và mục lục trang series.
+   scrollbar-width lo cho Firefox, ::-webkit-* lo cho Chrome/Safari. */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #334155 transparent;
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #0ea5e9;
+}
+
 /* Lời bài hát có dòng dài / URL dài thì xuống dòng thay vì đẩy tràn ngang */
 .prose :where(p, li, h1, h2, h3, h4, blockquote):not(:where([class~="not-prose"] *)) {
   overflow-wrap: break-word;

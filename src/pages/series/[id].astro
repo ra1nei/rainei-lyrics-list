@@ -1,120 +1,87 @@
 ---
 import { getCollection, render } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
-import { SERIES_MAP, SEASON_MAP } from '../../utils/seriesMap';
+import {
+  getSeriesInfo,
+  seriesIdOf,
+  songIdOf,
+  groupKeyOf,
+  buildSongLabels,
+  makeHeadingFormatter,
+  compareSongs,
+} from '../../utils/songs';
 
 export async function getStaticPaths() {
   const allSongs = await getCollection('songs');
-  const uniqueSeries = [...new Set(allSongs.map(song => song.slug.split('/')[0]))];
-  return uniqueSeries.map(seriesId => ({
+  const uniqueSeries = [...new Set(allSongs.map((song) => seriesIdOf(song.slug)))];
+  return uniqueSeries.map((seriesId) => ({
     params: { id: seriesId },
-    props: { seriesId }
+    props: { seriesId },
   }));
 }
 
 const { id } = Astro.params;
+const base = import.meta.env.BASE_URL;
 
-// 1. LẤY THÔNG TIN SERIES
-const seriesInfo = SERIES_MAP[id] || { romaji: id, vietnamese: id, year: "" };
+const seriesInfo = getSeriesInfo(id!);
 
-// 2. LẤY & SORT BÀI HÁT
 const seriesSongs = (await getCollection('songs'))
-  .filter(song => song.slug.startsWith(`${id}/`))
-  .sort((a, b) => (a.data.date?.valueOf() || 0) - (b.data.date?.valueOf() || 0));
+  .filter((song) => seriesIdOf(song.slug) === id)
+  .sort(compareSongs);
 
-// 3. GOM NHÓM
-const groupedSongs = {};
-const songLabels = {};
+// Gom bài theo thư mục con (mùa / phim / misc)
+type RenderedSong = (typeof seriesSongs)[number] & { Content: any };
+const groupedSongs: Record<string, RenderedSong[]> = {};
 
 for (const song of seriesSongs) {
-  const parts = song.slug.split('/');
-  const originalFolder = parts.length > 2 ? parts[1] : '99_misc'; 
-
-  if (!groupedSongs[originalFolder]) {
-    groupedSongs[originalFolder] = [];
-  }
-  
+  const key = groupKeyOf(song.slug);
   const { Content } = await render(song);
-  groupedSongs[originalFolder].push({ ...song, Content });
+  (groupedSongs[key] ??= []).push({ ...song, Content });
 }
 
-// Logic Tag
-Object.keys(groupedSongs).forEach(key => {
-    const list = groupedSongs[key];
-    const assign = (l, p) => l.forEach((s, i) => songLabels[s.slug] = l.length > 1 ? `${p}${i+1}` : p);
-    assign(list.filter(s => s.data.type === 'OP'), 'OP');
-    assign(list.filter(s => s.data.type === 'ED'), 'ED');
-    assign(list.filter(s => s.data.type === 'INS'), 'INS');
-    assign(list.filter(s => s.data.type === 'MV'), 'MV');
-    const miscList = list.filter(s => !['OP', 'ED', 'INS', 'MV'].includes(s.data.type));
-    if (miscList.length > 0) {
-        assign(miscList, 'MISC');
-    }
-});
-
+const songLabels = buildSongLabels(groupedSongs);
+const formatHeading = makeHeadingFormatter(groupedSongs, seriesInfo);
 const sortedGroups = Object.keys(groupedSongs).sort();
-const tvSeasonsCount = sortedGroups.filter(key => key.includes('season-')).length;
-const contentGroupsCount = sortedGroups.filter(key => !key.includes('misc')).length;
-
-// LOGIC HEADING
-const formatHeading = (originalFolder) => {
-  const cleanFolder = originalFolder.replace(/^\d+_/, ''); 
-  let mappedName = SEASON_MAP[cleanFolder];
-
-  // Logic xử lý tên
-  let result = "";
-
-  if (cleanFolder === 'misc' || cleanFolder.includes('misc') || mappedName === 'Miscellaneous') {
-    result = 'MUSIC VIDEO'; 
-  } else {
-    const firstSongInGroup = groupedSongs[originalFolder][0];
-    
-    // Ưu tiên custom season
-    if (firstSongInGroup?.data.season) {
-        result = `${seriesInfo.vietnamese} - ${firstSongInGroup.data.season}`;
-    } 
-    // TV Series duy nhất
-    else if (cleanFolder.startsWith('season-') && tvSeasonsCount === 1) {
-        result = seriesInfo.vietnamese; 
-    }
-    // Movie duy nhất
-    else if (cleanFolder === 'movie' && contentGroupsCount === 1) {
-        result = seriesInfo.vietnamese;
-    }
-    // Mặc định
-    else {
-        let finalSeasonName = mappedName || cleanFolder.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        result = `${seriesInfo.vietnamese} - ${finalSeasonName}`;
-    }
-  }
-
-  // Trả về IN HOA TOÀN BỘ theo yêu cầu
-  return result.toUpperCase();
-};
 
 const pageTitle = `${seriesInfo.vietnamese} (${seriesInfo.year})`;
+const pageDescription = `Lời Việt hoá ${seriesSongs.length} bài hát trong ${seriesInfo.vietnamese} (${seriesInfo.romaji}).`;
 ---
 
-<Layout title={`${pageTitle} | Rainei Lyrics List`}>
-  
+<Layout title={`${pageTitle} | Rainei Lyrics List`} description={pageDescription}>
+
   <div class="w-full mx-auto pt-6 sm:pt-8 lg:grid lg:grid-cols-10 lg:gap-10 relative">
 
     <main class="lg:col-span-7 min-w-0 pb-40 lg:pb-20">
 
-      <div class="mb-8 sm:mb-12 border-b border-slate-800 pb-5 sm:pb-6">
-        <h1 class="text-2xl sm:text-3xl md:text-5xl font-extrabold text-white leading-tight mb-2 break-words">
-          {seriesInfo.vietnamese}
-        </h1>
-        <div class="text-base sm:text-xl text-slate-400 font-light flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span>{seriesInfo.romaji}</span>
-            {seriesInfo.year && <span class="text-slate-600">• {seriesInfo.year}</span>}
+      <div class="mb-8 sm:mb-12 border-b border-slate-800 pb-5 sm:pb-6 flex items-start gap-4 sm:gap-6">
+        {seriesInfo.cover && (
+          <img
+            src={seriesInfo.cover}
+            alt={`Ảnh bìa ${seriesInfo.vietnamese}`}
+            width="112"
+            height="168"
+            class="w-20 sm:w-28 shrink-0 aspect-2/3 object-cover rounded-lg border border-slate-800 shadow-xl shadow-black/40"
+          />
+        )}
+
+        <div class="min-w-0">
+          <h1 class="text-2xl sm:text-3xl md:text-5xl font-extrabold text-white leading-tight mb-2 break-words">
+            {seriesInfo.vietnamese}
+          </h1>
+          <div class="text-base sm:text-xl text-slate-400 font-light flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span>{seriesInfo.romaji}</span>
+              {seriesInfo.year && <span class="text-slate-600">• {seriesInfo.year}</span>}
+          </div>
+          <div class="mt-3 text-xs sm:text-sm text-slate-500 font-mono">
+            {seriesSongs.length} bài
+          </div>
         </div>
       </div>
 
       <div class="space-y-14 sm:space-y-20">
         {sortedGroups.map(groupKey => (
           <section id={`group-${groupKey}`} class="scroll-mt-8">
-            
+
             <h2 class="text-lg sm:text-2xl font-bold text-sky-400 mb-6 sm:mb-8 border-l-4 border-sky-500 pl-3 sm:pl-4 group/heading">
               <a href={`#group-${groupKey}`} class="hover:text-sky-300 transition-colors flex items-baseline gap-2 break-words">
                 {formatHeading(groupKey)}
@@ -125,11 +92,11 @@ const pageTitle = `${seriesInfo.vietnamese} (${seriesInfo.year})`;
             <div class="space-y-12 sm:space-y-16">
               {groupedSongs[groupKey].map(song => {
                 const tag = songLabels[song.slug];
-                const songId = song.slug.split('/').pop(); 
-                
+                const songId = songIdOf(song.slug);
+
                 return (
-                  <article id={songId} class="scroll-mt-24 group/article"> 
-                    
+                  <article id={songId} class="scroll-mt-24 group/article">
+
                     <div class="mb-5 sm:mb-6">
                         <h3 class="text-xl sm:text-2xl font-bold text-white mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
                         {tag && <span class="px-2 py-0.5 rounded text-xs sm:text-sm bg-sky-500/10 text-sky-400 border border-sky-500/20 shrink-0">{tag}</span>}
@@ -161,10 +128,10 @@ const pageTitle = `${seriesInfo.vietnamese} (${seriesInfo.year})`;
     </main>
 
     <aside class="hidden lg:flex lg:col-span-3 flex-col gap-4 sticky top-8 self-start">
-      
+
       <div class="flex justify-start w-full">
-        <a 
-            href={import.meta.env.BASE_URL}
+        <a
+            href={base}
             class="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors bg-slate-900/50 px-4 py-2 rounded-full border border-slate-800 hover:border-sky-500/50 hover:bg-slate-800"
             title="Quay lại trang chủ"
         >
@@ -173,8 +140,8 @@ const pageTitle = `${seriesInfo.vietnamese} (${seriesInfo.year})`;
         </a>
       </div>
 
-      <div class="bg-slate-900/40 backdrop-blur border border-slate-800 rounded-xl p-5 max-h-[calc(100vh-8rem)] overflow-y-auto custom-scrollbar w-full">
-        
+      <div id="desktop-toc" class="bg-slate-900/40 backdrop-blur border border-slate-800 rounded-xl p-5 max-h-[calc(100vh-8rem)] overflow-y-auto custom-scrollbar w-full">
+
         <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6 pb-2 border-b border-slate-800">
           MỤC LỤC
         </h3>
@@ -182,29 +149,29 @@ const pageTitle = `${seriesInfo.vietnamese} (${seriesInfo.year})`;
         <nav class="space-y-3">
           {sortedGroups.map(groupKey => (
             <div>
-              <a 
+              <a
                 href={`#group-${groupKey}`}
-                class="block text-sm font-bold text-sky-400 mb-3 truncate hover:text-sky-300 transition-colors" 
+                class="block text-sm font-bold text-sky-400 mb-3 truncate hover:text-sky-300 transition-colors"
                 title={formatHeading(groupKey)}
               >
                  {formatHeading(groupKey)}
               </a>
-              
+
               <ul class="space-y-4 border-l border-slate-800 ml-1">
                 {groupedSongs[groupKey].map(song => {
                    const tag = songLabels[song.slug];
-                   const songId = song.slug.split('/').pop();
-                   
+                   const songId = songIdOf(song.slug);
+
                    return (
-                    <li class="pl-4 relative group">
-                      <a href={`#${songId}`} class="block transition-colors">
-                        <span class="absolute -left-[1px] top-0 bottom-0 w-[2px] bg-transparent group-hover:bg-sky-500 transition-colors"></span>
-                        
+                    <li class="relative group">
+                      <a href={`#${songId}`} data-song={songId} class="toc-link block pl-4 transition-colors">
+                        <span class="toc-bar absolute -left-[1px] top-0 bottom-0 w-[2px] bg-transparent group-hover:bg-sky-500 transition-colors"></span>
+
                         <div class="flex items-baseline gap-3 mb-1">
                             <div class="shrink-0 w-8 text-right text-xs font-bold text-sky-500 font-mono">
                                 {tag}
                             </div>
-                            <div class="flex-1 min-w-0 text-sm text-slate-300 group-hover:text-white font-medium leading-tight break-words">
+                            <div class="toc-title flex-1 min-w-0 text-sm text-slate-300 group-hover:text-white font-medium leading-tight break-words">
                                 {song.data.title}
                             </div>
                         </div>
@@ -234,7 +201,7 @@ const pageTitle = `${seriesInfo.vietnamese} (${seriesInfo.year})`;
     style="bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));"
   >
     <a
-      href={import.meta.env.BASE_URL}
+      href={base}
       aria-label="Quay lại trang chủ"
       class="bg-slate-800 text-white p-3 rounded-full shadow-lg border border-slate-700 active:scale-95 transition-transform"
     >
@@ -253,7 +220,7 @@ const pageTitle = `${seriesInfo.vietnamese} (${seriesInfo.year})`;
   <div id="mobile-toc-overlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] hidden opacity-0 transition-opacity duration-300">
     <div
       id="mobile-toc-content"
-      class="absolute right-0 top-0 bottom-0 w-[85%] max-w-sm bg-slate-900 border-l border-slate-800 p-5 sm:p-6 overflow-y-auto overscroll-contain translate-x-full transition-transform duration-300"
+      class="absolute right-0 top-0 bottom-0 w-[85%] max-w-sm bg-slate-900 border-l border-slate-800 p-5 sm:p-6 overflow-y-auto overscroll-contain custom-scrollbar translate-x-full transition-transform duration-300"
       style="padding-top: calc(1.25rem + env(safe-area-inset-top, 0px)); padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));"
     >
 
@@ -267,7 +234,7 @@ const pageTitle = `${seriesInfo.vietnamese} (${seriesInfo.year})`;
         <nav class="space-y-6">
             {sortedGroups.map(groupKey => (
               <div>
-                <a 
+                <a
                   href={`#group-${groupKey}`}
                   class="mobile-toc-link block text-sm font-bold text-sky-400 mb-3"
                 >
@@ -276,15 +243,16 @@ const pageTitle = `${seriesInfo.vietnamese} (${seriesInfo.year})`;
                 <ul class="space-y-1 border-l border-slate-800 ml-1">
                   {groupedSongs[groupKey].map(song => {
                      const tag = songLabels[song.slug];
-                     const songId = song.slug.split('/').pop();
+                     const songId = songIdOf(song.slug);
                      return (
-                      <li>
-                        <a href={`#${songId}`} class="mobile-toc-link block py-2 pl-4 active:bg-white/5 rounded-r">
+                      <li class="relative group">
+                        <a href={`#${songId}`} data-song={songId} class="mobile-toc-link toc-link block py-2 pl-4 active:bg-white/5 rounded-r">
+                          <span class="toc-bar absolute -left-[1px] top-0 bottom-0 w-[2px] bg-transparent transition-colors"></span>
                           <div class="flex items-baseline gap-3 mb-0.5">
                             <div class="shrink-0 w-8 text-right text-xs font-bold text-sky-500 font-mono">
                               {tag}
                             </div>
-                            <div class="flex-1 min-w-0 text-sm text-slate-200 font-medium leading-tight break-words">
+                            <div class="toc-title flex-1 min-w-0 text-sm text-slate-200 font-medium leading-tight break-words">
                               {song.data.title}
                             </div>
                           </div>
@@ -349,25 +317,68 @@ const pageTitle = `${seriesInfo.vietnamese} (${seriesInfo.year})`;
       });
     }
 
-    // Ẩn nút nổi khi cuộn xuống (đang đọc lời), hiện lại khi cuộn lên / ở đầu / ở cuối trang.
     const fabs = document.getElementById('mobile-fabs');
-    if (fabs) {
-      let lastY = window.scrollY;
+    const articles = Array.from(document.querySelectorAll<HTMLElement>('article[id]'));
+    const tocLinks = Array.from(document.querySelectorAll<HTMLElement>('.toc-link'));
+    const tocBox = document.getElementById('desktop-toc');
 
-      window.addEventListener('scroll', () => {
-        const y = window.scrollY;
-        const doc = document.documentElement;
-        const atBottom = y + window.innerHeight >= doc.scrollHeight - 48;
-        const scrollingDown = y > lastY + 6;
-        const scrollingUp = y < lastY - 6;
+    let lastY = window.scrollY;
+    let activeId = '';
 
-        if (scrollingDown && y > 240 && !atBottom) fabs.classList.add('fabs-hidden');
-        else if (scrollingUp || y <= 240 || atBottom) fabs.classList.remove('fabs-hidden');
+    /** Bài đang đọc = bài cuối cùng có mép trên đã đi qua vạch 140px. */
+    const syncActiveSong = () => {
+      if (!articles.length || !tocLinks.length) return;
 
-        // Chỉ cập nhật mốc khi vượt ngưỡng rung tay, tránh nút nhấp nháy
-        if (scrollingDown || scrollingUp) lastY = y;
-      }, { passive: true });
-    }
+      let current = articles[0];
+      for (const article of articles) {
+        if (article.getBoundingClientRect().top > 140) break;
+        current = article;
+      }
+      if (current.id === activeId) return;
+      activeId = current.id;
+
+      let active: HTMLElement | null = null;
+      tocLinks.forEach((link) => {
+        const on = link.dataset.song === activeId;
+        link.classList.toggle('is-active', on);
+        if (on && link.closest('#desktop-toc')) active = link;
+      });
+
+      // Kéo mục lục desktop theo nếu link đang đọc trôi ra ngoài khung.
+      // Chỉ đụng scrollTop của chính khung mục lục, không đụng scroll của trang.
+      if (tocBox && active && tocBox.scrollHeight > tocBox.clientHeight) {
+        if (activeId === articles[0].id) {
+          // Đang ở bài đầu thì về hẳn đầu mục lục, không thì tiêu đề MỤC LỤC bị cuộn mất
+          tocBox.scrollTop = 0;
+        } else {
+          const box = tocBox.getBoundingClientRect();
+          const rect = (active as HTMLElement).getBoundingClientRect();
+          if (rect.top < box.top + 8) tocBox.scrollTop += rect.top - box.top - 8;
+          else if (rect.bottom > box.bottom - 8) tocBox.scrollTop += rect.bottom - box.bottom + 8;
+        }
+      }
+    };
+
+    /** Ẩn nút nổi khi cuộn xuống (đang đọc), hiện lại khi cuộn lên / ở đầu / ở cuối trang. */
+    const syncFabs = () => {
+      if (!fabs) return;
+      const y = window.scrollY;
+      const atBottom = y + window.innerHeight >= document.documentElement.scrollHeight - 48;
+      const down = y > lastY + 6;
+      const up = y < lastY - 6;
+
+      if (down && y > 240 && !atBottom) fabs.classList.add('fabs-hidden');
+      else if (up || y <= 240 || atBottom) fabs.classList.remove('fabs-hidden');
+
+      if (down || up) lastY = y;
+    };
+
+    window.addEventListener('scroll', () => {
+      syncFabs();
+      syncActiveSong();
+    }, { passive: true });
+
+    syncActiveSong();
   </script>
 
   <style>
@@ -380,18 +391,12 @@ const pageTitle = `${seriesInfo.vietnamese} (${seriesInfo.year})`;
         pointer-events: none;
     }
 
-    .custom-scrollbar::-webkit-scrollbar {
-        width: 4px;
+    /* Bài đang đọc được đánh dấu trong cả mục lục desktop lẫn mobile */
+    .toc-link.is-active .toc-bar {
+        background-color: #38bdf8;
     }
-    .custom-scrollbar::-webkit-scrollbar-track {
-        background: rgba(30, 41, 59, 0.5); 
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #38bdf8; 
-        border-radius: 4px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: #0ea5e9; 
+    .toc-link.is-active .toc-title {
+        color: #fff;
     }
   </style>
 

@@ -1,18 +1,35 @@
 ---
+import { getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+  src: string;
+  /**
+   * Ảnh poster. Truyền thẳng object import được từ MDX (`import poster from './x.png'`)
+   * để Astro nén lại; truyền string thì dùng nguyên, không tối ưu được.
+   */
+  poster?: ImageMetadata | string;
+}
+
 const { src, poster } = Astro.props;
 
-let finalPoster = "";
+let finalPoster = '';
 
-if (typeof poster === 'object' && poster !== null && poster.src) {
-  finalPoster = poster.src;
-} 
-else if (typeof poster === 'string') {
-    if (poster.startsWith('http') || poster.startsWith('/')) {
-        finalPoster = poster;
-    } 
-    else {
-        finalPoster = `${import.meta.env.BASE_URL}/thumbnail/${poster}`;
-    }
+if (poster && typeof poster === 'object' && 'src' in poster) {
+  // PNG gốc là 1920x1080 (~2MB/tấm). Khung video rộng nhất khoảng 820px trên desktop,
+  // nên 1280px WebP là thừa sức nét mà nhẹ hơn cả chục lần.
+  const optimized = await getImage({
+    src: poster,
+    format: 'webp',
+    width: 1280,
+    quality: 72,
+  });
+  finalPoster = optimized.src;
+} else if (typeof poster === 'string' && poster) {
+  finalPoster =
+    poster.startsWith('http') || poster.startsWith('/')
+      ? poster
+      : `${import.meta.env.BASE_URL}/thumbnail/${poster}`;
 }
 ---
 
@@ -22,7 +39,7 @@ else if (typeof poster === 'string') {
     playsinline
     class="block w-full h-auto aspect-video"
     poster={finalPoster}
-    preload="metadata"
+    preload="none"
   >
     <source src={src} type="video/mp4" />
     Your browser does not support the video tag.

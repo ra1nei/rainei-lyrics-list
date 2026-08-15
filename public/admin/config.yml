@@ -20,7 +20,8 @@ collections:
     fields:
       - {label: "Tiêu đề bài hát", name: "title", widget: "string"}
       - {label: "Nghệ sĩ (Artist)", name: "artist", widget: "string", required: false}
-      - {label: "Loại (OP/ED/INS)", name: "type", widget: "select", options: ["OP", "ED", "INS", "OST"], required: false}
+      # Phải khớp z.enum trong src/content/config.ts, lệch một giá trị là build fail
+      - {label: "Loại (OP/ED/INS/MV)", name: "type", widget: "select", options: ["OP", "ED", "INS", "MV"], required: false}
       - {label: "Ngày phát hành", name: "date", widget: "datetime", format: "YYYY-MM-DD", date_format: "DD/MM/YYYY", time_format: false}
       - {label: "Tên Mùa/Phim (Custom)", name: "season", widget: "string", required: false, hint: "Điền nếu muốn ghi đè tên mặc định (VD: Phần Tương Lai)"}
       - {label: "Ảnh Cover", name: "cover", widget: "image", required: false}
