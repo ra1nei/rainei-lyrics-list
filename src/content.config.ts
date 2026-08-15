@@ -8,14 +8,19 @@ import { glob } from 'astro/loaders';
 
 const songs = defineCollection({
   loader: glob({ base: './src/content/songs', pattern: '**/*.mdx' }),
-  schema: z.object({
-    title: z.string(),                                    // Tựa bài hát
-    artist: z.string().optional(),                        // Nghệ sĩ
-    cover: z.string().optional(),                         // Cover riêng cho bài hát
-    date: z.coerce.date().optional(),                     // Ngày đăng, dùng cho mục "Vừa cập nhật"
-    type: z.enum(['OP', 'ED', 'INS', 'MV']).optional(),   // Loại bài (phải khớp public/admin/config.yml)
-    season: z.string().optional(),                        // Ghi đè tên mùa hiển thị
-  }),
+  // image() biến đường dẫn tương đối trong frontmatter thành ImageMetadata, nhờ vậy
+  // poster vẫn đi qua pipeline ảnh của Astro và được nén sang WebP.
+  schema: ({ image }) =>
+    z.object({
+      title: z.string(),                                    // Tựa bài hát
+      artist: z.string().optional(),                        // Nghệ sĩ
+      video: z.string().optional(),                         // Link mp4; để trống thì không hiện player
+      poster: image().optional(),                           // Ảnh thumbnail của video
+      cover: z.string().optional(),                         // Cover riêng cho bài hát
+      date: z.coerce.date().optional(),                     // Ngày đăng, dùng cho mục "Vừa cập nhật"
+      type: z.enum(['OP', 'ED', 'INS', 'MV']).optional(),   // Loại bài (phải khớp public/admin/config.yml)
+      season: z.string().optional(),                        // Ghi đè tên mùa hiển thị
+    }),
 });
 
 /**

@@ -1,12 +1,19 @@
 <!doctype html>
-<html>
+<html lang="vi">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Content Manager</title>
-  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <meta name="robots" content="noindex" />
+  <title>Quản lý nội dung | Rainei Lyrics List</title>
+  <!--
+    Sveltia CMS thay cho Decap CMS.
+    Lý do đổi: bản cũ dùng backend git-gateway + Netlify Identity, mà cả hai đều là
+    dịch vụ của Netlify. Site này host trên GitHub Pages nên không có server để chạy
+    bước trao đổi OAuth, trang admin cũ mở được nhưng không đăng nhập được.
+    Sveltia đọc đúng file config.yml của Decap và cho đăng nhập thẳng bằng
+    Personal Access Token, nên không phải dựng thêm hạ tầng nào.
+  -->
+  <script src="https://unpkg.com/@sveltia/cms/dist/sveltia-cms.js" type="module"></script>
 </head>
-<body>
-  <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
-</body>
+<body></body>
 </html>

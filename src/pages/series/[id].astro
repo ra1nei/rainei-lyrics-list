@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
+import Video from '../../components/Video.astro';
 import {
   loadSeriesLookup,
   seriesInfoOf,
@@ -109,6 +110,10 @@ const pageDescription = `Lời Việt hoá ${seriesSongs.length} bài hát trong
                             </div>
                         )}
                     </div>
+
+                    {song.data.video && (
+                      <Video src={song.data.video} poster={song.data.poster} />
+                    )}
 
                     <div class="pl-3 md:pl-4 border-l border-slate-800/50 group-hover/article:border-sky-500/30 transition-colors">
                       <div class="prose prose-invert prose-base sm:prose-lg max-w-none
