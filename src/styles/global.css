@@ -5,9 +5,32 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
+html {
+  /* Chặn iOS Safari tự phóng to chữ khi xoay ngang */
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  /* clip chứ KHÔNG dùng hidden: hidden biến phần tử thành scroll container
+     và làm chết position: sticky của mục lục bên phải trang series. */
+  overflow-x: clip;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
 body {
   @apply bg-[#0f172a] text-slate-300 min-h-screen relative;
   background: linear-gradient(to bottom right, #0f172a, #1e1b4b);
+}
+
+/* Lời bài hát có dòng dài / URL dài thì xuống dòng thay vì đẩy tràn ngang */
+.prose :where(p, li, h1, h2, h3, h4, blockquote):not(:where([class~="not-prose"] *)) {
+  overflow-wrap: break-word;
+}
+
+.prose :where(pre, table):not(:where([class~="not-prose"] *)) {
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 body::before {

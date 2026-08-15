@@ -49,18 +49,18 @@ const initialCover = seriesList[0]?.cover || "";
 
 <Layout title="Trang chủ | Rainei Lyrics List" isHome={true}>
   
-  <div class="h-full flex flex-col px-6 pb-2 pt-6 max-w-[1800px] mx-auto w-full">
-    
+  <div class="flex flex-col px-4 sm:px-6 pb-4 pt-6 lg:h-full lg:pb-2 max-w-[1800px] mx-auto w-full">
+
     <div class="text-center shrink-0 mb-6">
-       <h1 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-purple-500">
+       <h1 class="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-purple-500">
         Rainei Lyrics List
       </h1>
-      <p class="text-slate-500 text-sm mt-1">Tổng hợp lời Việt hoá các bài hát do mình thực hiện.</p>
+      <p class="text-slate-500 text-xs sm:text-sm mt-1">Tổng hợp lời Việt hoá các bài hát do mình thực hiện.</p>
     </div>
 
-    <div class="flex-1 grid grid-cols-12 gap-8 min-h-0 mb-4">
-      
-      <div class="hidden lg:block col-span-4 h-full relative group rounded-2xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-900/50">
+    <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 lg:min-h-0 mb-4">
+
+      <div class="hidden lg:block lg:col-span-4 h-full relative group rounded-2xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-900/50">
           <img 
             id="preview-img" 
             src={initialCover} 
@@ -75,9 +75,9 @@ const initialCover = seriesList[0]?.cover || "";
           </div>
       </div>
 
-      <div class="col-span-12 lg:col-span-8 flex flex-col h-full gap-6">
-        
-        <div class="bg-slate-900/40 border border-sky-500/20 rounded-xl p-4 backdrop-blur-sm shrink-0">
+      <div class="lg:col-span-8 flex flex-col lg:h-full gap-6 min-w-0">
+
+        <div class="bg-slate-900/40 border border-sky-500/20 rounded-xl p-3 sm:p-4 backdrop-blur-sm shrink-0">
             <div class="flex items-center gap-2 mb-3 text-sky-400 font-bold uppercase tracking-widest text-xs">
               <span class="relative flex h-2 w-2">
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
@@ -93,20 +93,22 @@ const initialCover = seriesList[0]?.cover || "";
                 const seriesName = SERIES_MAP[seriesId]?.vietnamese || seriesId;
 
                 return (
-                  <a href={`${import.meta.env.BASE_URL}/series/${seriesId}#${songId}`} class="flex items-center justify-between p-2 rounded hover:bg-white/5 group transition-colors">
-                    <div class="flex items-center gap-2 overflow-hidden">
-                       <span class="text-xs font-bold text-sky-500/70 bg-sky-500/10 px-1.5 py-0.5 rounded border border-sky-500/20 whitespace-nowrap">
+                  <a href={`${import.meta.env.BASE_URL}/series/${seriesId}#${songId}`} class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-4 p-2 rounded hover:bg-white/5 group transition-colors min-w-0">
+                    <div class="flex items-center gap-2 min-w-0 flex-1">
+                       <span class="text-[10px] sm:text-xs font-bold text-sky-500/70 bg-sky-500/10 px-1.5 py-0.5 rounded border border-sky-500/20 whitespace-nowrap shrink-0 max-w-[40%] sm:max-w-none truncate">
                          {seriesName}
                        </span>
-                       <span class="text-sm text-slate-300 group-hover:text-white truncate font-medium">
+                       <span class="text-sm text-slate-300 group-hover:text-white truncate font-medium min-w-0">
                          {song.data.title}
                        </span>
-                       <span class="text-[10px] text-slate-500 border border-slate-700 px-1 rounded ml-1 whitespace-nowrap">
-                         {song.data.season || ""}
-                       </span>
+                       {song.data.season && (
+                         <span class="hidden sm:inline text-[10px] text-slate-500 border border-slate-700 px-1 rounded whitespace-nowrap shrink-0">
+                           {song.data.season}
+                         </span>
+                       )}
                     </div>
-                    
-                    <span class="text-xs text-slate-600 font-mono ml-4 whitespace-nowrap">
+
+                    <span class="text-[11px] sm:text-xs text-slate-600 font-mono whitespace-nowrap shrink-0">
                       {song.data.date ? song.data.date.toLocaleDateString('vi-VN') : ''}
                     </span>
                   </a>
@@ -115,30 +117,30 @@ const initialCover = seriesList[0]?.cover || "";
             </div>
         </div>
 
-        <div class="flex-1 flex flex-col min-h-0 bg-slate-900/20 border border-slate-800/50 rounded-xl overflow-hidden">
-            <div class="px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest border-b border-slate-800 bg-slate-900/50">
+        <div class="flex-1 flex flex-col lg:min-h-0 bg-slate-900/20 border border-slate-800/50 rounded-xl overflow-hidden">
+            <div class="px-4 sm:px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest border-b border-slate-800 bg-slate-900/50">
               Danh sách phim
             </div>
-            
-            <div class="flex-1 overflow-y-auto custom-scrollbar p-2">
+
+            <div class="lg:flex-1 lg:overflow-y-auto custom-scrollbar p-2">
               {seriesList.map((series) => (
                 <a 
                   href={`${import.meta.env.BASE_URL}/series/${series.id}`}
-                  class="song-row group flex items-center px-4 py-3 hover:bg-slate-800/60 transition-all duration-200 cursor-pointer 
-                         border-b border-slate-800/50 last:border-b-0 rounded-lg hover:rounded-lg" 
-                  data-cover={series.cover} 
+                  class="song-row group flex items-center px-3 sm:px-4 py-3 hover:bg-slate-800/60 active:bg-slate-800/60 transition-all duration-200 cursor-pointer
+                         border-b border-slate-800/50 last:border-b-0 rounded-lg hover:rounded-lg"
+                  data-cover={series.cover}
                 >
                   {/* ^ ĐÃ SỬA CLASS Ở TRÊN:
                       - border-b border-slate-800/50: Tạo gạch mờ ở dưới
                       - last:border-b-0: Cái cuối cùng không gạch
                       - rounded-lg hover:rounded-lg: Giữ bo góc khi hover cho đẹp
                   */}
-                  <div class="flex flex-col group-hover:translate-x-1 transition-transform">
-                      <div class="font-bold text-slate-300 group-hover:text-white text-lg leading-tight">
+                  <div class="flex flex-col min-w-0 lg:group-hover:translate-x-1 transition-transform">
+                      <div class="font-bold text-slate-300 group-hover:text-white text-base sm:text-lg leading-tight">
                           {series.info.vietnamese}
-                          {series.info.year && <span class="text-slate-600 text-sm font-normal ml-2">({series.info.year})</span>}
+                          {series.info.year && <span class="text-slate-600 text-xs sm:text-sm font-normal ml-2">({series.info.year})</span>}
                       </div>
-                      <div class="text-xs text-slate-500 font-mono mt-1 group-hover:text-sky-500/70 transition-colors">
+                      <div class="text-[11px] sm:text-xs text-slate-500 font-mono mt-1 group-hover:text-sky-500/70 transition-colors truncate">
                           {series.info.romaji}
                       </div>
                   </div>
@@ -150,18 +152,19 @@ const initialCover = seriesList[0]?.cover || "";
       </div>
     </div>
 
-    <div class="shrink-0 text-center border-t border-slate-900 pt-4 text-slate-600 text-xs">
-        &copy; 2026 Rainei Lyrics List.
+    <div class="shrink-0 text-center border-t border-slate-900 pt-4 pb-[env(safe-area-inset-bottom,0px)] text-slate-600 text-xs">
+        &copy; {new Date().getFullYear()} Rainei Lyrics List.
     </div>
 
   </div>
 
   <script>
-    const previewImg = document.getElementById('preview-img');
+    const previewImg = document.getElementById('preview-img') as HTMLImageElement | null;
     const placeholder = document.getElementById('preview-placeholder');
     const rows = document.querySelectorAll('.song-row');
 
-    rows.forEach(row => {
+    // Preview chỉ có ở desktop (cột trái ẩn dưới lg) nên bỏ qua nếu không tìm thấy.
+    if (previewImg && placeholder) rows.forEach(row => {
       row.addEventListener('mouseenter', () => {
         const cover = row.getAttribute('data-cover');
         if (cover && cover !== "") {

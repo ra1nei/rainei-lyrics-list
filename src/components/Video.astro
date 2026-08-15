@@ -16,10 +16,11 @@ else if (typeof poster === 'string') {
 }
 ---
 
-<div class="video-container my-8 rounded-xl overflow-hidden shadow-2xl border border-slate-800 bg-black">
-  <video 
-    controls 
-    class="w-full aspect-video" 
+<div class="video-container not-prose my-6 sm:my-8 max-w-full rounded-lg sm:rounded-xl overflow-hidden shadow-2xl border border-slate-800 bg-black">
+  <video
+    controls
+    playsinline
+    class="block w-full h-auto aspect-video"
     poster={finalPoster}
     preload="metadata"
   >
