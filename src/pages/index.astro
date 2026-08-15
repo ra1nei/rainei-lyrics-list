@@ -1,10 +1,12 @@
 ---
 import { getCollection } from 'astro:content';
 import Layout from '../layouts/Layout.astro';
-import { getSeriesInfo, seriesIdOf, songIdOf, normalizeVi } from '../utils/songs';
+import { loadSeriesLookup, seriesInfoOf, seriesIdOf, songIdOf } from '../utils/songs';
+import { normalizeVi } from '../utils/text';
 
 const base = import.meta.env.BASE_URL;
 const allSongs = await getCollection('songs');
+const seriesLookup = await loadSeriesLookup();
 
 // 1. VỪA CẬP NHẬT: so sánh theo timestamp cho chính xác tuyệt đối
 const newUpdates = allSongs
@@ -13,12 +15,12 @@ const newUpdates = allSongs
   .slice(0, 3);
 
 // 2. LIST SERIES
-const uniqueSeriesIds = [...new Set(allSongs.map((song) => seriesIdOf(song.slug)))];
+const uniqueSeriesIds = [...new Set(allSongs.map((song) => seriesIdOf(song.id)))];
 
 const seriesList = uniqueSeriesIds
   .map((id) => {
-    const info = getSeriesInfo(id);
-    const songs = allSongs.filter((song) => seriesIdOf(song.slug) === id);
+    const info = seriesInfoOf(seriesLookup, id);
+    const songs = allSongs.filter((song) => seriesIdOf(song.id) === id);
 
     // Gộp tên phim + tên bài + nghệ sĩ vào một chuỗi đã bỏ dấu để lọc phía client
     const haystack = normalizeVi(
@@ -92,11 +94,11 @@ const totalSongs = allSongs.length;
 
             <div class="grid gap-2">
               {newUpdates.length > 0 ? newUpdates.map((song) => {
-                const seriesId = seriesIdOf(song.slug);
-                const seriesName = getSeriesInfo(seriesId).vietnamese;
+                const seriesId = seriesIdOf(song.id);
+                const seriesName = seriesInfoOf(seriesLookup, seriesId).vietnamese;
 
                 return (
-                  <a href={`${base}/series/${seriesId}#${songIdOf(song.slug)}`} class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-4 p-2 rounded hover:bg-white/5 group transition-colors min-w-0">
+                  <a href={`${base}/series/${seriesId}#${songIdOf(song.id)}`} class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-4 p-2 rounded hover:bg-white/5 group transition-colors min-w-0">
                     <div class="flex items-center gap-2 min-w-0 flex-1">
                        <span class="text-[10px] sm:text-xs font-bold text-sky-500/70 bg-sky-500/10 px-1.5 py-0.5 rounded border border-sky-500/20 whitespace-nowrap shrink-0 max-w-[40%] sm:max-w-none truncate">
                          {seriesName}
@@ -182,7 +184,7 @@ const totalSongs = allSongs.length;
   </div>
 
   <script>
-    import { normalizeVi } from '../utils/songs';
+    import { normalizeVi } from '../utils/text';
 
     const previewImg = document.getElementById('preview-img') as HTMLImageElement | null;
     const placeholder = document.getElementById('preview-placeholder');

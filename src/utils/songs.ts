@@ -1,8 +1,9 @@
-import { SERIES_MAP, SEASON_MAP } from './seriesMap';
+import { getCollection } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
 
 /**
  * Helper dùng chung cho trang chủ và trang series.
- * Slug của một bài có dạng: <series>/<nhóm>/<tên bài>
+ * Id của một bài có dạng: <series>/<nhóm>/<tên bài>
  * VD: sousou-no-frieren/01_season-1/01_yuusha
  */
 
@@ -11,49 +12,63 @@ export const MISC_GROUP = '99_misc';
 /** Thứ tự tag hiển thị: OP trước, rồi ED, INS, MV, còn lại gom vào MISC. */
 export const TAG_ORDER = ['OP', 'ED', 'INS', 'MV'] as const;
 
-export interface SeriesInfo {
-  romaji: string;
-  vietnamese: string;
-  year: number | string;
-  cover?: string;
-}
+/** Tên thư mục con -> tên mùa hiển thị. Không khai ở đây thì tự suy từ tên thư mục. */
+export const SEASON_MAP: Record<string, string> = {
+  'season-1': 'Mùa 01',
+  'season-2': 'Mùa 02',
+  'season-3': 'Mùa 03',
+  'season-4': 'Mùa 04',
+  movie: 'Phim điện ảnh',
+  ova: 'Tập đặc biệt',
+  misc: 'MUSIC VIDEO',
+};
+
+export type SeriesInfo = CollectionEntry<'series'>['data'];
+export type Song = CollectionEntry<'songs'>;
+
+// ---------------------------------------------------------------- series
 
 /**
- * Bỏ dấu tiếng Việt để gõ "phap su tien tang" vẫn tìm ra "Pháp Sư Tiễn Táng".
- * NFD tách được dấu thanh nhưng không tách đ/Đ, nên phải thay tay.
+ * Nạp toàn bộ thông tin phim từ collection `series`.
+ * Trước đây dữ liệu này hardcode trong src/utils/seriesMap.ts.
  */
-export function normalizeVi(input: string): string {
-  return input
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/đ/g, 'd');
+export async function loadSeriesLookup(): Promise<Map<string, SeriesInfo>> {
+  const entries = await getCollection('series');
+  return new Map(entries.map((entry) => [entry.id, entry.data]));
 }
 
-export function seriesIdOf(slug: string): string {
-  return slug.split('/')[0];
+/** Phim chưa khai file yaml thì hiện tạm id thay cho tên, để trang không vỡ. */
+export function seriesInfoOf(
+  lookup: Map<string, SeriesInfo>,
+  id: string
+): SeriesInfo {
+  return lookup.get(id) ?? { romaji: id, vietnamese: id, year: '' };
 }
 
-export function songIdOf(slug: string): string {
-  return slug.split('/').pop()!;
+// ---------------------------------------------------------------- id
+
+export function seriesIdOf(id: string): string {
+  return id.split('/')[0];
+}
+
+export function songIdOf(id: string): string {
+  return id.split('/').pop()!;
 }
 
 /** Thư mục con chứa bài. Bài nằm ngay trong thư mục series thì coi là misc. */
-export function groupKeyOf(slug: string): string {
-  const parts = slug.split('/');
+export function groupKeyOf(id: string): string {
+  const parts = id.split('/');
   return parts.length > 2 ? parts[1] : MISC_GROUP;
 }
 
-export function getSeriesInfo(id: string): SeriesInfo {
-  return SERIES_MAP[id] || { romaji: id, vietnamese: id, year: '' };
-}
+// ---------------------------------------------------------------- thứ tự
 
 /**
  * Số thứ tự lấy từ đầu tên file: 01_Yuusha.mdx -> 1.
  * File không đánh số thì đẩy xuống cuối nhóm.
  */
-export function fileOrderOf(slug: string): number {
-  const match = /^(\d+)_/.exec(songIdOf(slug));
+export function fileOrderOf(id: string): number {
+  const match = /^(\d+)_/.exec(songIdOf(id));
   return match ? parseInt(match[1], 10) : Number.MAX_SAFE_INTEGER;
 }
 
@@ -64,24 +79,26 @@ export function fileOrderOf(slug: string): number {
  * nhiều bài trùng ngày nên phần hoà phụ thuộc thứ tự nạp file của Astro:
  * dev server và bản build cho ra hai thứ tự khác nhau.
  *
- * Phá hoà bằng date rồi tới slug để phép so sánh là toàn phần, bảo đảm
+ * Phá hoà bằng date rồi tới id để phép so sánh là toàn phần, bảo đảm
  * dev và build luôn ra cùng kết quả.
  */
 export function compareSongs(
-  a: { slug: string; data: { date?: Date } },
-  b: { slug: string; data: { date?: Date } }
+  a: { id: string; data: { date?: Date } },
+  b: { id: string; data: { date?: Date } }
 ): number {
-  const byFile = fileOrderOf(a.slug) - fileOrderOf(b.slug);
+  const byFile = fileOrderOf(a.id) - fileOrderOf(b.id);
   if (byFile !== 0) return byFile;
 
   const byDate = (a.data.date?.valueOf() ?? 0) - (b.data.date?.valueOf() ?? 0);
   if (byDate !== 0) return byDate;
 
-  return a.slug.localeCompare(b.slug);
+  return a.id.localeCompare(b.id);
 }
 
+// ---------------------------------------------------------------- tag & tiêu đề
+
 interface SongLike {
-  slug: string;
+  id: string;
   data: { type?: string; season?: string };
 }
 
@@ -97,7 +114,7 @@ export function buildSongLabels<T extends SongLike>(
   for (const list of Object.values(groups)) {
     const assign = (subset: T[], prefix: string) => {
       subset.forEach((song, i) => {
-        labels[song.slug] = subset.length > 1 ? `${prefix}${i + 1}` : prefix;
+        labels[song.id] = subset.length > 1 ? `${prefix}${i + 1}` : prefix;
       });
     };
 
@@ -131,8 +148,8 @@ export function makeHeadingFormatter<T extends SongLike>(
     const clean = groupKey.replace(/^\d+_/, '');
     const mapped = SEASON_MAP[clean];
 
-    if (clean.includes('misc') || mapped === 'Miscellaneous') {
-      return 'MUSIC VIDEO';
+    if (clean.includes('misc')) {
+      return SEASON_MAP.misc;
     }
 
     const customSeason = groups[groupKey]?.[0]?.data.season;
@@ -152,3 +169,5 @@ export function makeHeadingFormatter<T extends SongLike>(
     return `${seriesInfo.vietnamese} - ${seasonName}`.toUpperCase();
   };
 }
+
+// normalizeVi nằm ở utils/text.ts vì script phía trình duyệt cũng cần dùng.

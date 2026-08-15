@@ -2,7 +2,8 @@
 import { getCollection, render } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
 import {
-  getSeriesInfo,
+  loadSeriesLookup,
+  seriesInfoOf,
   seriesIdOf,
   songIdOf,
   groupKeyOf,
@@ -13,7 +14,7 @@ import {
 
 export async function getStaticPaths() {
   const allSongs = await getCollection('songs');
-  const uniqueSeries = [...new Set(allSongs.map((song) => seriesIdOf(song.slug)))];
+  const uniqueSeries = [...new Set(allSongs.map((song) => seriesIdOf(song.id)))];
   return uniqueSeries.map((seriesId) => ({
     params: { id: seriesId },
     props: { seriesId },
@@ -23,10 +24,10 @@ export async function getStaticPaths() {
 const { id } = Astro.params;
 const base = import.meta.env.BASE_URL;
 
-const seriesInfo = getSeriesInfo(id!);
+const seriesInfo = seriesInfoOf(await loadSeriesLookup(), id!);
 
 const seriesSongs = (await getCollection('songs'))
-  .filter((song) => seriesIdOf(song.slug) === id)
+  .filter((song) => seriesIdOf(song.id) === id)
   .sort(compareSongs);
 
 // Gom bài theo thư mục con (mùa / phim / misc)
@@ -34,7 +35,7 @@ type RenderedSong = (typeof seriesSongs)[number] & { Content: any };
 const groupedSongs: Record<string, RenderedSong[]> = {};
 
 for (const song of seriesSongs) {
-  const key = groupKeyOf(song.slug);
+  const key = groupKeyOf(song.id);
   const { Content } = await render(song);
   (groupedSongs[key] ??= []).push({ ...song, Content });
 }
@@ -91,8 +92,8 @@ const pageDescription = `Lời Việt hoá ${seriesSongs.length} bài hát trong
 
             <div class="space-y-12 sm:space-y-16">
               {groupedSongs[groupKey].map(song => {
-                const tag = songLabels[song.slug];
-                const songId = songIdOf(song.slug);
+                const tag = songLabels[song.id];
+                const songId = songIdOf(song.id);
 
                 return (
                   <article id={songId} class="scroll-mt-24 group/article">
@@ -159,8 +160,8 @@ const pageDescription = `Lời Việt hoá ${seriesSongs.length} bài hát trong
 
               <ul class="space-y-4 border-l border-slate-800 ml-1">
                 {groupedSongs[groupKey].map(song => {
-                   const tag = songLabels[song.slug];
-                   const songId = songIdOf(song.slug);
+                   const tag = songLabels[song.id];
+                   const songId = songIdOf(song.id);
 
                    return (
                     <li class="relative group">
@@ -242,8 +243,8 @@ const pageDescription = `Lời Việt hoá ${seriesSongs.length} bài hát trong
                 </a>
                 <ul class="space-y-1 border-l border-slate-800 ml-1">
                   {groupedSongs[groupKey].map(song => {
-                     const tag = songLabels[song.slug];
-                     const songId = songIdOf(song.slug);
+                     const tag = songLabels[song.id];
+                     const songId = songIdOf(song.id);
                      return (
                       <li class="relative group">
                         <a href={`#${songId}`} data-song={songId} class="mobile-toc-link toc-link block py-2 pl-4 active:bg-white/5 rounded-r">

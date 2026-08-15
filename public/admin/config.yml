@@ -3,24 +3,42 @@ backend:
   branch: main # Nhánh chính của ông (thường là main hoặc master)
 
 # Thư mục chứa ảnh khi upload từ CMS
-media_folder: "public/covers" 
+media_folder: "public/covers"
 public_folder: "/covers"
 
 # Cấu hình Tiếng Việt cho giao diện
 locale: 'vi'
 
 collections:
+  # Thông tin từng bộ phim. Tên file chính là id trong URL:
+  # sousou-no-frieren.yaml -> /series/sousou-no-frieren
+  # Thư mục bài hát phải trùng id này thì mới ghép được.
+  - name: "series"
+    label: "Bộ phim (Series)"
+    folder: "src/content/series"
+    create: true
+    extension: "yaml"
+    format: "yaml"
+    slug: "{{fields.slug}}"
+    summary: "{{vietnamese}} ({{year}})"
+    fields:
+      - {label: "Mã (dùng làm URL + tên thư mục bài hát)", name: "slug", widget: "string", hint: "Chỉ chữ thường, số và dấu gạch ngang. VD: sousou-no-frieren"}
+      - {label: "Tên romaji", name: "romaji", widget: "string"}
+      - {label: "Tên tiếng Việt", name: "vietnamese", widget: "string"}
+      - {label: "Năm", name: "year", widget: "number", value_type: "int", required: false}
+      - {label: "Ảnh bìa (URL)", name: "cover", widget: "string", required: false, hint: "Dán link ảnh bìa, VD từ AniList"}
+
   - name: "songs"
     label: "Bài hát (Lyrics)"
     folder: "src/content/songs" # Folder chứa MDX
     create: true # Cho phép tạo bài mới
     nested: # Cho phép folder con (quan trọng với cấu trúc frieren/01_season-1/...)
-      depth: 3 
+      depth: 3
       summary: '{{title}}'
     fields:
       - {label: "Tiêu đề bài hát", name: "title", widget: "string"}
       - {label: "Nghệ sĩ (Artist)", name: "artist", widget: "string", required: false}
-      # Phải khớp z.enum trong src/content/config.ts, lệch một giá trị là build fail
+      # Phải khớp z.enum trong src/content.config.ts, lệch một giá trị là build fail
       - {label: "Loại (OP/ED/INS/MV)", name: "type", widget: "select", options: ["OP", "ED", "INS", "MV"], required: false}
       - {label: "Ngày phát hành", name: "date", widget: "datetime", format: "YYYY-MM-DD", date_format: "DD/MM/YYYY", time_format: false}
       - {label: "Tên Mùa/Phim (Custom)", name: "season", widget: "string", required: false, hint: "Điền nếu muốn ghi đè tên mặc định (VD: Phần Tương Lai)"}
