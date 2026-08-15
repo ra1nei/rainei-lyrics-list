@@ -55,6 +55,9 @@ collections:
     public_folder: ""
     fields:
       - {label: "Tựa bài hát", name: "title", widget: "string"}
+      # CMS đặt tên file theo tựa đề nên không sinh được tiền tố 01_ như các file cũ.
+      # Không điền ô này thì bài mới rơi xuống cuối mùa.
+      - {label: "Thứ tự trong mùa", name: "order", widget: "number", value_type: "int", required: false, hint: "Số nhỏ đứng trước. Bỏ trống thì bài này xếp cuối."}
       - {label: "Nghệ sĩ", name: "artist", widget: "string", required: false}
       # Phải khớp z.enum trong src/content.config.ts, lệch một giá trị là build fail
       - {label: "Loại", name: "type", widget: "select", options: ["OP", "ED", "INS", "MV"], required: false}

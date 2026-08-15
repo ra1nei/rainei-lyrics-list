@@ -73,6 +73,18 @@ export function fileOrderOf(id: string): number {
 }
 
 /**
+ * Thứ tự thực dùng: ưu tiên ô "Thứ tự" trong frontmatter, không có thì lấy số
+ * đầu tên file.
+ *
+ * Cần cả hai vì CMS đặt tên file theo tựa đề nên không sinh được tiền tố 01_,
+ * bài thêm từ web sẽ luôn rơi xuống cuối nhóm nếu chỉ trông vào tên file.
+ * Các file cũ đang đánh số vẫn chạy nguyên như trước, khỏi sửa gì.
+ */
+export function orderOf(song: { id: string; data: { order?: number | null } }): number {
+  return song.data.order ?? fileOrderOf(song.id);
+}
+
+/**
  * Thứ tự hiển thị bài trong một nhóm.
  *
  * Sắp theo số đầu tên file, KHÔNG theo date. Trước đây sort bằng date, mà
@@ -83,10 +95,10 @@ export function fileOrderOf(id: string): number {
  * dev và build luôn ra cùng kết quả.
  */
 export function compareSongs(
-  a: { id: string; data: { date?: Date } },
-  b: { id: string; data: { date?: Date } }
+  a: { id: string; data: { date?: Date | null; order?: number | null } },
+  b: { id: string; data: { date?: Date | null; order?: number | null } }
 ): number {
-  const byFile = fileOrderOf(a.id) - fileOrderOf(b.id);
+  const byFile = orderOf(a) - orderOf(b);
   if (byFile !== 0) return byFile;
 
   const byDate = (a.data.date?.valueOf() ?? 0) - (b.data.date?.valueOf() ?? 0);
