@@ -1,27 +1,43 @@
 ---
+import { getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+// Trang series tự dựng thẻ này từ frontmatter, đừng đặt tay vào file lời bài hát.
+interface Props {
+  src: string;
+  // ImageMetadata (từ ô poster trong frontmatter) thì mới được nén.
+  // Truyền string thì xài nguyên link, không qua pipeline ảnh.
+  poster?: ImageMetadata | string | null;
+}
+
 const { src, poster } = Astro.props;
 
-let finalPoster = "";
+let finalPoster = '';
 
-if (typeof poster === 'object' && poster !== null && poster.src) {
-  finalPoster = poster.src;
-} 
-else if (typeof poster === 'string') {
-    if (poster.startsWith('http') || poster.startsWith('/')) {
-        finalPoster = poster;
-    } 
-    else {
-        finalPoster = `${import.meta.env.BASE_URL}/thumbnail/${poster}`;
-    }
+if (poster && typeof poster === 'object' && 'src' in poster) {
+  // Khung video rộng nhất tầm 820px nên 1280 là thừa nét, kéo cao hơn chỉ nặng trang
+  const optimized = await getImage({
+    src: poster,
+    format: 'webp',
+    width: 1280,
+    quality: 72,
+  });
+  finalPoster = optimized.src;
+} else if (typeof poster === 'string' && poster) {
+  finalPoster =
+    poster.startsWith('http') || poster.startsWith('/')
+      ? poster
+      : `${import.meta.env.BASE_URL}/thumbnail/${poster}`;
 }
 ---
 
-<div class="video-container my-8 rounded-xl overflow-hidden shadow-2xl border border-slate-800 bg-black">
-  <video 
-    controls 
-    class="w-full aspect-video" 
+<div class="video-container not-prose my-6 sm:my-8 max-w-full rounded-lg sm:rounded-xl overflow-hidden shadow-2xl border border-slate-800 bg-black">
+  <video
+    controls
+    playsinline
+    class="block w-full h-auto aspect-video"
     poster={finalPoster}
-    preload="metadata"
+    preload="none"
   >
     <source src={src} type="video/mp4" />
     Your browser does not support the video tag.

@@ -1,27 +1,92 @@
+# Trang quản lý nội dung: https://ra1nei.github.io/rainei-lyrics-list/admin/
+#
+# CHƯA ĐĂNG NHẬP ĐƯỢC CHỪNG NÀO base_url CÒN ĐANG COMMENT.
+#
+# Decap cần một server nhỏ đứng giữa để đổi mã OAuth lấy token, mà GitHub Pages
+# thì không chạy code server. Phải tự dựng, free trên Cloudflare Workers.
+# Làm một lần rồi thôi:
+#
+#   1. Deploy https://github.com/sveltia/sveltia-cms-auth (README có nút one-click).
+#      Tên là Sveltia nhưng chạy được với Decap, và nó có ALLOWED_DOMAINS.
+#      Mấy proxy khác không có cái đó nên bỏ qua.
+#
+#   2. Tạo OAuth App ở github.com/settings/applications/new
+#        Homepage URL              : https://ra1nei.github.io/rainei-lyrics-list/
+#        Authorization callback URL: <URL-Worker>/callback
+#
+#   3. Worker > Settings > Variables, nhét 3 biến (secret nhớ bấm Encrypt):
+#        GITHUB_CLIENT_ID
+#        GITHUB_CLIENT_SECRET
+#        ALLOWED_DOMAINS = ra1nei.github.io
+#
+#      Thiếu ALLOWED_DOMAINS thì site nào cũng gọi được worker này. Repo vẫn an
+#      toàn vì GitHub chặn theo quyền từng tài khoản, nhưng tốn quota Cloudflare.
+#
+# Xong thì bỏ comment dòng base_url, điền URL thật. Khỏi khai auth_endpoint,
+# mặc định của Decap là "auth", trùng luôn với worker.
+#
+# Đừng bao giờ để client secret hay token vào file này. File này public, trình
+# duyệt tải thẳng từ /admin/config.yml.
 backend:
-  name: git-gateway # Dùng git-gateway để kết nối GitHub
-  branch: main # Nhánh chính của ông (thường là main hoặc master)
+  name: github
+  repo: ra1nei/rainei-lyrics-list
+  branch: main
+  # base_url: <URL-Worker>
 
-# Thư mục chứa ảnh khi upload từ CMS
-media_folder: "public/covers" 
+# Chỗ mặc định cho ảnh upload từ CMS
+media_folder: "public/covers"
 public_folder: "/covers"
 
-# Cấu hình Tiếng Việt cho giao diện
 locale: 'vi'
 
 collections:
-  - name: "songs"
-    label: "Bài hát (Lyrics)"
-    folder: "src/content/songs" # Folder chứa MDX
-    create: true # Cho phép tạo bài mới
-    nested: # Cho phép folder con (quan trọng với cấu trúc frieren/01_season-1/...)
-      depth: 3 
-      summary: '{{title}}'
+  # Tên file yaml = id trong URL, và thư mục bài hát phải trùng tên đó.
+  - name: "series"
+    label: "Bộ phim"
+    label_singular: "bộ phim"
+    folder: "src/content/series"
+    create: true
+    # Tắt preview, nó đổ giá trị các ô ra trần trụi chứ không có style của site
+    editor:
+      preview: false
+    extension: "yaml"
+    format: "yaml"
+    slug: "{{fields.slug}}"
+    summary: "{{vietnamese}} ({{year}})"
     fields:
-      - {label: "Tiêu đề bài hát", name: "title", widget: "string"}
-      - {label: "Nghệ sĩ (Artist)", name: "artist", widget: "string", required: false}
-      - {label: "Loại (OP/ED/INS)", name: "type", widget: "select", options: ["OP", "ED", "INS", "OST"], required: false}
-      - {label: "Ngày phát hành", name: "date", widget: "datetime", format: "YYYY-MM-DD", date_format: "DD/MM/YYYY", time_format: false}
-      - {label: "Tên Mùa/Phim (Custom)", name: "season", widget: "string", required: false, hint: "Điền nếu muốn ghi đè tên mặc định (VD: Phần Tương Lai)"}
-      - {label: "Ảnh Cover", name: "cover", widget: "image", required: false}
-      - {label: "Nội dung (Lời/Video)", name: "body", widget: "markdown"}
+      - {label: "Mã phim (dùng làm URL và tên thư mục bài hát)", name: "slug", widget: "string", hint: "Chỉ chữ thường, số, gạch ngang. VD: sousou-no-frieren"}
+      - {label: "Tên romaji", name: "romaji", widget: "string"}
+      - {label: "Tên tiếng Việt", name: "vietnamese", widget: "string"}
+      - {label: "Năm", name: "year", widget: "number", value_type: "int", required: false}
+      - {label: "Ảnh bìa (dán link)", name: "cover", widget: "string", required: false, hint: "VD lấy từ AniList"}
+
+  # Thứ tự bài lấy từ ô "Thứ tự trong mùa", hoặc số đầu tên file. Không phải từ ngày.
+  - name: "songs"
+    label: "Bài hát"
+    label_singular: "bài hát"
+    folder: "src/content/songs"
+    create: true
+    extension: "mdx"
+    format: "frontmatter"
+    editor:
+      preview: false
+    # Cho vào thư mục con <phim>/<mùa>/<bài>.mdx. Sveltia chưa làm được cái này.
+    nested:
+      depth: 3
+      summary: '{{title}}'
+    # Poster nằm cạnh bài, trong 00_thumbnail của từng phim
+    media_folder: ""
+    public_folder: ""
+    fields:
+      - {label: "Tựa bài hát", name: "title", widget: "string"}
+      # CMS đặt tên file theo tựa đề nên không có tiền tố 01_ như file tự tạo.
+      # Bỏ trống ô này là bài rơi xuống cuối mùa.
+      - {label: "Thứ tự trong mùa", name: "order", widget: "number", value_type: "int", required: false, hint: "Số nhỏ đứng trước. Bỏ trống thì bài này xếp cuối."}
+      - {label: "Nghệ sĩ", name: "artist", widget: "string", required: false}
+      # Khớp z.enum trong src/content.config.ts, lệch một giá trị là fail build
+      - {label: "Loại", name: "type", widget: "select", options: ["OP", "ED", "INS", "MV"], required: false}
+      - {label: "Ngày đăng", name: "date", widget: "datetime", format: "YYYY-MM-DD", date_format: "DD/MM/YYYY", time_format: false}
+      - {label: "Link video (mp4)", name: "video", widget: "string", required: false, hint: "Để trống thì bài này không hiện player"}
+      - {label: "Ảnh poster của video", name: "poster", widget: "image", required: false, hint: "Chỉ dùng khi có link video"}
+      - {label: "Tên mùa tự đặt", name: "season", widget: "string", required: false, hint: "Điền nếu muốn ghi đè tên mặc định. VD: Phần Tương Lai"}
+      - {label: "Lời bài hát", name: "body", widget: "markdown", hint: "Xuống dòng trong cùng một khổ thì gõ 2 dấu cách ở cuối dòng"}

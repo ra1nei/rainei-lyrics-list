@@ -1,12 +1,17 @@
 <!doctype html>
-<html>
+<html lang="vi">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Content Manager</title>
-  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <meta name="robots" content="noindex" />
+  <title>Quản lý nội dung | Rainei Lyrics List</title>
 </head>
 <body>
+  <!-- Decap chứ đừng đổi qua Sveltia: Sveltia chưa làm nested collections,
+       mà bài hát ở đây nằm trong thư mục con <phim>/<mùa>/. -->
+
+  <!-- Script phải để trong body. Nhét lên <head> là nó chạy lúc chưa có body
+       rồi chết: "Cannot read properties of null (reading 'appendChild')". -->
   <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
 </body>
 </html>
