@@ -8,7 +8,7 @@ interface Props {
    * Ảnh poster. Truyền thẳng object import được từ MDX (`import poster from './x.png'`)
    * để Astro nén lại; truyền string thì dùng nguyên, không tối ưu được.
    */
-  poster?: ImageMetadata | string | null;
+  poster?: ImageMetadata | string;
 }
 
 const { src, poster } = Astro.props;

@@ -1,0 +1,16 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap');
+
+:root:root {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+body h1, body h2, body h3,
+body .brand, body .brand-sub,
+body .stat strong {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+body h1 { letter-spacing: -1.2px; }
+body h2, body h3 { letter-spacing: -.5px; }
+body .brand { letter-spacing: -1px; }
+body .lyrics { line-height: 2; white-space: normal; }
+body .lyrics p { margin: 0 0 1.25em; }
+body .lyrics p:last-child { margin-bottom: 0; }

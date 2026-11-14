@@ -1,0 +1,51 @@
+body .album-song-list { gap: 12px; }
+body .batch-publish-actions, body .anime-bulk-actions { display: flex; align-items: center; gap: 10px; }
+body .batch-selection-tools, body .anime-selection-tools { display: none; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+body .batch-selecting .batch-selection-tools, body .anime-bulk-actions.selecting .anime-selection-tools { display: flex; }
+body .batch-selecting .batch-start, body .anime-bulk-actions.selecting .anime-select-start { display: none; }
+body .song-select-control { display: none; flex-shrink: 0; }
+body .batch-selecting .song-select-control { display: inline-flex; align-items: center; }
+body input[data-select-song], body input[data-select-anime] {
+  width: 22px; height: 22px; margin: 0; padding: 0; cursor: pointer; accent-color: #b5a3fb; flex-shrink: 0;
+}
+body details.song-editor.batch-selected { outline: 2px solid #c2b4ff; outline-offset: 2px; }
+body .admin-anime-grid .card { position: relative; }
+body .anime-select-control { position: absolute; z-index: 3; top: 19px; right: 19px; padding: 7px; border-radius: 50%; background: #15213cdd; display: none; box-shadow: 0 2px 12px #0005; }
+body .anime-selecting .anime-select-control { display: flex; }
+body .anime-selecting .card.anime-selected { outline: 2px solid #c2b4ff; outline-offset: 2px; }
+body .anime-selecting .anime-entry-button { cursor: pointer; }
+@media(max-width:760px) {
+  body .batch-selecting .album-savebar { flex-wrap: wrap; }
+  body .batch-selection-tools, body .anime-selection-tools { justify-content: flex-start; gap: 8px; }
+}
+body details.song-editor { padding: 0; overflow: hidden; border: 1px solid; border-left-width: 4px; border-radius: 12px; }
+body details.song-editor.song-published { background: linear-gradient(110deg, #24463f, #1b3036); border-color: #78b9a575; }
+body details.song-editor.song-unpublished { background: linear-gradient(110deg, #46372e, #2c2b35); border-color: #e0ad797a; }
+body .song-summary { display: flex; align-items: center; gap: 15px; padding: 18px 20px; cursor: pointer; list-style: none; }
+body .song-summary::-webkit-details-marker { display: none; }
+body .song-summary:hover { background: #ffffff07; }
+body .song-summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; border-radius: 8px; }
+body .song-summary-index { width: 29px; height: 29px; border-radius: 8px; display: grid; place-items: center; flex-shrink: 0; font-size: 12px; background: #ffcb9a1c; color: #ffdbb4; }
+body .song-published .song-summary-index { background: #98d9bc20; color: #b7f0d5; }
+body .song-summary-info { min-width: 0; flex: 1; }
+body .song-summary-title { display: block; font-size: 14px; overflow-wrap: anywhere; color: #ffe1c3; }
+body .song-published .song-summary-title { color: #c1f2df; }
+body .song-summary-info small { display: block; margin-top: 7px; color: #c1b3ac; font-size: 11px; }
+body .song-published .song-summary-info small { color: #aac9c1; }
+body .song-summary-status { text-align: right; flex-shrink: 0; }
+body .song-summary-status .badge.draft { color: #ffe0b7; background: #80563280; }
+body .song-summary-status .badge.live { color: #c4f5dc; background: #48756380; }
+body .song-edit-state { display: block; margin-top: 5px; font-size: 10px; color: #d6cfbe; }
+body .song-chevron { font-size: 20px; color: #c2b8a9; transition: transform .15s; }
+body details[open] > .song-summary .song-chevron { transform: rotate(180deg); }
+body .song-editor-body { padding: 24px; border-top: 1px solid #d8c2ae24; background: #141e32b8; }
+body .song-published .song-editor-body { border-top-color: #a6dfc92b; }
+body .song-editor:not([open]) { box-shadow: none; }
+@media(max-width:760px) {
+  body .song-summary { padding: 15px 12px; gap: 9px; flex-wrap: wrap; }
+  body .song-summary-title { font-size: 12px; }
+  body .song-summary-index { width: 24px; height: 24px; }
+  body .song-editor-body { padding: 17px; }
+  body .song-summary-status { max-width: 105px; }
+  body .song-summary-status .badge { font-size: 9px; }
+}

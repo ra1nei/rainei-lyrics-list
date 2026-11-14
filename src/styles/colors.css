@@ -1,0 +1,171 @@
+/* Shared color treatment for the library, reading view and editor. */
+:root:root {
+  --accent: #91e8ed;
+  --muted: #a6afca;
+  --line: #343b61;
+  --panel: #19223a;
+  background: #101527;
+  color: #eef0ff;
+}
+body {
+  background:
+    radial-gradient(ellipse at 3% 0%, #4c399447 0, transparent 43%),
+    radial-gradient(ellipse at 100% 22%, #15687c35 0, transparent 40%),
+    radial-gradient(ellipse at 60% 100%, #40387922 0, transparent 46%),
+    #101527;
+  background-attachment: fixed;
+}
+body .topbar {
+  background: linear-gradient(105deg, #24223de8, #172b3ae8);
+  border-bottom-color: #6864a94d;
+  box-shadow: 0 8px 35px #080d201f;
+}
+body .brand-mark {
+  color: #18223a;
+  background: linear-gradient(135deg, #b7a4ff, #86edf1);
+  box-shadow: 0 4px 24px #9679fc35;
+}
+body .brand-sub { color: #b7b5db; }
+body .topbar nav a { padding: 9px 13px; border-radius: 9px; }
+body .topbar nav a:hover { color: #fff; background: #9993ff15; }
+body .topbar nav a.active {
+  color: #c6baff;
+  background: #9580ee21;
+  box-shadow: inset 0 0 0 1px #a99aff32;
+}
+body .hero > p { color: #c0c9e8; }
+body .section-head > h2,
+body .detail-header h1 { color: #e1dcff; }
+body .eyebrow { color: #aaa9ff; }
+body .panel {
+  background: linear-gradient(135deg, #21283feb, #17243bea);
+  border-color: #59618f58;
+  box-shadow: 0 12px 35px #080e2426;
+}
+body input, body select, body textarea {
+  background: #111a30;
+  border-color: #414b73;
+  color: #edf1ff;
+}
+body input::placeholder, body textarea::placeholder { color: #8896b6; opacity: 1; }
+body select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23d3daf0' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 13px center;
+  background-size: 16px 16px;
+}
+body input:focus, body select:focus, body textarea:focus {
+  border-color: #a697fa;
+  outline-color: #a697fa;
+  box-shadow: 0 0 0 4px #a697fa16;
+}
+body .field { color: #b9c9ed; }
+body .search-icon { color: #ada5ef; }
+body .btn {
+  background: linear-gradient(135deg, #303955, #24334a);
+  border-color: #66749d65;
+  color: #e3e9ff;
+  transition: background .18s, border-color .18s, box-shadow .18s;
+}
+body .btn:hover:not(:disabled) { background: #3b4568; border-color: #9c9bd3; }
+body .btn.primary {
+  background: linear-gradient(115deg, #b5a3fb, #87dce9);
+  color: #17233c;
+  border-color: #c8baff;
+  box-shadow: 0 4px 18px #9a8ce829;
+}
+body .btn.primary:hover:not(:disabled) {
+  background: linear-gradient(115deg, #c9bcff, #a0eff2);
+  box-shadow: 0 5px 22px #a995fa42;
+}
+body .btn.danger { background: #492a405e; border-color: #be6b864f; color: #ffb6c9; }
+body .btn.danger:hover:not(:disabled) { background: #63364c; border-color: #d28b9e; }
+body button:disabled { cursor: not-allowed; }
+body .card {
+  --card-accent: #aba0fb;
+  border: 1px solid #57618b4a;
+  border-radius: 15px;
+  padding: 10px;
+  background: linear-gradient(155deg, #252b46c7, #18263bad);
+  box-shadow: 0 7px 22px #080e201f;
+  transition: border-color .2s, background .2s, box-shadow .2s;
+}
+body .card:nth-child(3n+2) { --card-accent: #7bdcd8; }
+body .card:nth-child(3n) { --card-accent: #e7a4cf; }
+body .card:hover,
+body .card:focus-within {
+  border-color: var(--card-accent);
+  background: linear-gradient(155deg, #313555e3, #20354be3);
+  box-shadow: 0 10px 28px #0b0f283d;
+}
+body .card .poster { border-color: #8d8ab057; border-radius: 10px; }
+body .card-meta { flex-wrap: wrap; gap: 8px 10px; }
+body .list-view .card > a { border-bottom: 0; }
+body .song-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 10px;
+  border-left: 1px solid #a59cc94a;
+  color: #c2b8ec;
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+body .song-count svg { flex-shrink: 0; opacity: .85; }
+body .card h3 { color: #f1efff; }
+body .card:hover h3 { color: var(--card-accent); }
+body .card .poster .badge {
+  background: #19263ee8;
+  border-color: #b2b1f461;
+  color: #e1dcff;
+  backdrop-filter: blur(8px);
+}
+body .badge { background: #3b4265; color: #ddd9ff; }
+body .badge.live { background: #1e4d49; color: #a2f2dc; }
+body .badge.draft { background: #57422c; color: #ffe0a4; }
+body .admin-search-sticky {
+  background: transparent;
+  border-bottom: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+body .anilist-dropdown {
+  background: linear-gradient(130deg, #252b46, #182c3c);
+  border-color: #8b80c57a;
+  box-shadow: 0 22px 60px #070d2480;
+}
+body .result { background: #202d45; border-color: #56658d; }
+body .result:hover, body .result:focus-visible { background: #363758; border-color: #b9a6ff; }
+body .local-match { background: #224243; border-color: #558f8c; }
+body .local-match:hover { background: #2a5553; }
+body .anime-tabs .btn.active {
+  background: linear-gradient(110deg, #534571, #2c4a62);
+  border-color: #ae9be6;
+  color: #f1eaff;
+}
+body .album-savebar {
+  background: linear-gradient(110deg, #352f51f5, #21434bf5);
+  border-color: #8c85b787;
+}
+body .album-savebar span { color: #d4e3f5; }
+body .song-editor { border-top: 3px solid #a599e1; }
+body .song-editor:nth-child(even) { border-top-color: #78cdd5; }
+body .publication-hint { background: #8a7adb14; border-left: 2px solid #a899e7; padding: 12px 16px; border-radius: 6px; font-size: 13px; }
+body .detail-header { border-bottom: 1px solid #7b71ae54; padding-bottom: 30px; }
+body .detail-header > img { box-shadow: 0 12px 35px #7971bf2b; border: 1px solid #a39adc61; }
+body .song { border-top: 2px solid #9790d2; }
+body .song h2 { color: #d7ceff; }
+body .lyrics { color: #e0e4f1; }
+body .toc a:hover { color: #baafff; }
+body footer { background: #151c30a8; border-top-color: #716b9d43; }
+@media(max-width:760px) {
+  body .topbar nav { gap: 6px; }
+  body .topbar nav a { padding: 8px 10px; }
+  body .card { padding: 8px; }
+}

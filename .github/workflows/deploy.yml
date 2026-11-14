@@ -44,6 +44,9 @@ jobs:
         run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
 
       - name: Build with Astro
+        env:
+          PUBLIC_SUPABASE_URL: ${{ vars.PUBLIC_SUPABASE_URL || 'https://jseixagjqawddddffwmn.supabase.co' }}
+          PUBLIC_SUPABASE_ANON_KEY: ${{ vars.PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_p9jwILZ-nnkrvJo-J1olgA_jvjpnWsr' }}
         run: |
           ${{ steps.detect-package-manager.outputs.runner }} astro build
 

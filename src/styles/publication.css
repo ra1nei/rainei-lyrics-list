@@ -1,0 +1,18 @@
+body .card-status { display: flex; align-items: center; margin-top: 12px; min-height: 24px; }
+body .card-status .badge { font-size: 10px; padding: 5px 9px; }
+body .publication-filter-row { display: flex; gap: 15px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin: 0 0 22px; }
+body .publication-filter { display: inline-flex; gap: 3px; padding: 4px; border: 1px solid #7881ad3d; border-radius: 10px; background: #11192c80; }
+body .publication-filter-btn { padding: 9px 12px; border-radius: 7px; border: 1px solid transparent; background: transparent; color: #a8b5ce; font-size: 12px; white-space: nowrap; }
+body .publication-filter-btn:hover { color: #e0ddf8; background: #b0a5ed0c; }
+body .publication-filter-btn.active { background: #8474bd32; border-color: #ab9ae342; color: #ece4ff; }
+body .publication-filter-btn.active[data-id="published"] { background: #4b9b7b30; border-color: #8dcab742; color: #b2ebd3; }
+body .publication-filter-btn.active[data-id="draft"] { background: #a97b4830; border-color: #d4a27042; color: #f2cfa8; }
+body .publication-filter-row .count-label { font-size: 11px; }
+@media(max-width:650px) {
+  body .publication-filter-btn { font-size: 10px; padding: 9px 8px; }
+  body .publication-filter-row { gap: 10px; }
+}
+
+body .song-publication-summary { display: flex; flex-direction: column; gap: 5px; margin-top: 9px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+body .song-progress { color: #b2dfd0; }
+body .song-drafts { color: #f2c49b; }
