@@ -204,7 +204,7 @@ test('Navigation preserves custom group titles and escapes song metadata',()=>{
   assert.match(html,/Buổi diễn đặc biệt/);
   assert.match(html,/&lt;b&gt;Song&lt;\/b&gt;/);
   assert.match(html,/A &amp; B/);
-  assert.match(html,/#song-song-a/);
+  assert.match(html,/#song-a/);
 });
 
 test('Every TOC URL uses a clean fragment that resolves directly to its song DOM id',()=>{
@@ -216,7 +216,8 @@ test('Every TOC URL uses a clean fragment that resolves directly to its song DOM
     const domId=article.match(/id="([^"]+)"/)[1];
     const fragment=toc.match(/href="#([^"]+)"/)[1];
     assert.equal(fragment,`#${domId}`);
-    assert.match(fragment,/^#song-[a-z0-9-]+$/);
+    assert.match(fragment,/^#[a-z0-9-]+$/);
+    assert.doesNotMatch(fragment,/^#song-/);
   }
 });
 

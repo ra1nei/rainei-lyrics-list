@@ -136,7 +136,7 @@ function filterLibrary() {
 function songAnchorBase(entry) {
   const tail=String(entry.id||'song').split('/').at(-1);
   const slug=tail.replace(/^\d+[_-]*/, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-  return `song-${slug||'untitled'}`;
+  return slug||'untitled';
 }
 function songAnchorId(entry, songs=[]) {
   const used=new Set();
@@ -497,7 +497,10 @@ async function route() {
     if(location.hash){
       let hash=location.hash.slice(1);try{hash=decodeURIComponent(hash);}catch{}
       const seriesId=params.get('series'),songs=published.filter(e=>e.kind==='song'&&e.parent_id===seriesId);
-      const target=songs.find(song=>hash===songAnchorId(song,songs)||hash===`song-${encodeURIComponent(song.id)}`||hash===song.id.split('/').at(-1));
+      const target=songs.find(song=>{
+        const anchor=songAnchorId(song,songs);
+        return hash===anchor||hash===`song-${anchor}`||hash===`song-${encodeURIComponent(song.id)}`||hash===song.id.split('/').at(-1);
+      });
       const targetId=target?songAnchorId(target,songs):hash;
       document.getElementById(targetId)?.scrollIntoView();
       if(target&&hash!==targetId)history.replaceState(history.state,'',`${location.pathname}${location.search}#${targetId}`);
