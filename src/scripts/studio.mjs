@@ -122,7 +122,7 @@ async function toggleEntryPublication(id) {
   notice(live?'Đã tắt công khai. Bản nháp vẫn được giữ.':'Đã bật công khai.');
 }
 function renderLibrary() {
-  main.innerHTML = `<section class="hero"><p class="muted">Tổng hợp lời Việt hoá các bài hát do mình thực hiện.</p></section><div class="toolbar"><div class="search"><span class="search-icon">⌕</span><input id="library-search" type="search" aria-label="Tìm phim, bài hát hoặc nghệ sĩ" placeholder="Tìm phim, bài hát hoặc nghệ sĩ…"/></div>${button(viewMode==='grid'?'☷ Danh sách':'▦ Lưới', 'toggle-view')}</div><div class="section-head"><h2>Thư viện phim</h2><span id="result-count" class="count-label"></span></div><div id="library-grid" class="grid ${viewMode==='list'?'list-view':''}"></div>`;
+  main.innerHTML = `<section class="hero"><p class="muted">Tổng hợp lời Việt hoá các bài hát do mình thực hiện.</p></section><div class="toolbar"><div class="search"><span class="search-icon">⌕</span><input id="library-search" type="search" aria-label="Tìm phim, bài hát hoặc nghệ sĩ" placeholder="Tìm phim, bài hát hoặc nghệ sĩ…"/></div>${button(viewMode==='grid'?'☷ Danh sách':'▦ Lưới', 'toggle-view')}</div><div class="section-head"><h2>Thư viện phim</h2></div><div id="library-grid" class="grid ${viewMode==='list'?'list-view':''}"></div>`;
   $('#library-search').addEventListener('input', filterLibrary);
   filterLibrary();
 }
@@ -131,7 +131,6 @@ function filterLibrary() {
   let list = published.filter(e => e.kind === 'series');
   list = list.filter(e => normalize([e.data.title, e.data.vietnamese, ...Object.values(e.data.titles||{}), ...published.filter(s=>s.parent_id===e.id).flatMap(s=>[s.data.title,s.data.artist])].join(' ')).includes(q));
   list.sort((a,b) => a.data.title.localeCompare(b.data.title));
-  $('#result-count').textContent = `${list.length} bộ phim`;
   $('#library-grid').innerHTML = list.length ? list.map(e=>`<article class="card"><a href="${href({series:e.id})}"><div class="poster">${image(e.data.cover,e.data.title)}</div><div><h3 title="${esc(e.data.title)}">${esc(e.data.title)}</h3><p>${esc(e.data.vietnamese||e.data.titles?.native||'')}</p><div class="card-meta"><span>${esc(e.data.year||'—')}</span>${songCountHTML(countSongs(e.id))}${e.data.format&&e.data.format!=='ANIME'?'<span>·</span><span>'+esc(e.data.format)+'</span>':''}</div></div></a></article>`).join('') : '<div class="empty">Chưa có phim phù hợp. Thử đổi từ khoá.</div>';
 }
 function songHTML(entry) {

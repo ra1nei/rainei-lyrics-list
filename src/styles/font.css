@@ -1,12 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap');
 
 :root:root {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  --app-font: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: var(--app-font);
 }
 body h1, body h2, body h3,
 body .brand, body .brand-sub,
 body .stat strong {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: var(--app-font);
 }
 body h1 { letter-spacing: -1.2px; }
 body h2, body h3 { letter-spacing: -.5px; }
@@ -14,3 +15,25 @@ body .brand { letter-spacing: -1px; }
 body .lyrics { line-height: 2; white-space: normal; }
 body .lyrics p { margin: 0 0 1.25em; }
 body .lyrics p:last-child { margin-bottom: 0; }
+body .hero {
+  display: block;
+  text-align: center;
+  margin-bottom: 32px;
+}
+body .hero > p {
+  max-width: none;
+  font-size: 16px;
+}
+body .topbar nav { font-size: 15px; }
+body .toolbar input,
+body .toolbar select,
+body .toolbar .btn { font-size: 14px; }
+body .section-head h2 { font-size: 24px; }
+body .card h3 { font-size: 17px; }
+body .card p { font-size: 13px; }
+body .card-meta { font-size: 12px; }
+body .badge { font-size: 11px; }
+body footer { font-size: 12px; }
+@media (max-width: 760px) {
+  body .hero > p { font-size: 15px; }
+}
