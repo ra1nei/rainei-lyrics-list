@@ -67,7 +67,7 @@ Trong GitHub repo → Settings → Secrets and variables → Actions → Variabl
 
 Workflow đã chuyển hai biến này vào build. Push thay đổi code và deploy như trước. Từ đó, thêm phim/lời và publish trên admin chỉ ghi database; người đọc thấy bản mới khi tải lại trang. Không cần chạy GitHub Actions cho mỗi lần sửa nội dung.
 
-Giữ `site`/`base` hiện có trong `astro.config.mjs`. Phim mới dùng `/?series=ID` để không phụ thuộc `getStaticPaths`. Các URL `/series/slug/` cũ chuyển hướng về trang runtime và giữ hash bài hát.
+Giữ `site`/`base` hiện có trong `astro.config.mjs`. Trang anime dùng URL `/series/ID/`; các slug có sẵn được build tĩnh, còn anime mới dùng app shell trong `404.html` để nạp dữ liệu runtime. Các link query `/?series=ID` cũ vẫn được chuyển sang URL đường dẫn và giữ hash bài hát.
 
 ## Kiểm tra đã thực hiện và giới hạn
 

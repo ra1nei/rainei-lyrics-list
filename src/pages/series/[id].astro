@@ -1,10 +1,10 @@
 ---
 import { getCollection } from 'astro:content';
+import RuntimeApp from '../../components/RuntimeApp.astro';
+
 export async function getStaticPaths() {
   const series = await getCollection('series');
-  return series.map(s => ({params:{id:s.id}}));
+  return series.map(item => ({ params: { id: item.id } }));
 }
-const base = import.meta.env.BASE_URL.replace(/\/$/,'');
-const target = `${base}/?series=${encodeURIComponent(Astro.params.id!)}`;
 ---
-<!doctype html><html lang="vi"><head><meta charset="utf-8"/><meta name="robots" content="noindex"/><title>Rainei · Mở trang phim</title></head><body><a id="redirect" href={target}>Mở trang phim</a><script>const a = document.querySelector<HTMLAnchorElement>('#redirect')!; location.replace(a.href + location.hash);</script></body></html>
+<RuntimeApp />

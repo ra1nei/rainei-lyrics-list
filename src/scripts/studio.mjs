@@ -19,7 +19,15 @@ const main = document.querySelector('#main');
 const base = app.dataset.base;
 const $ = (selector) => main.querySelector(selector);
 const esc = (s = '') => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-const href = (params = {}) => `${base}/?${new URLSearchParams(params)}`;
+const href = (params = {}) => { const query=new URLSearchParams(params).toString();return `${base}/${query?`?${query}`:''}`; };
+const seriesHref = id => `${base}/series/${encodeURIComponent(id)}/`;
+function seriesIdFromPath(pathname) {
+  const prefix=`${base}/series/`;
+  if(!pathname.startsWith(prefix))return null;
+  const segment=pathname.slice(prefix.length).split('/')[0];
+  if(!segment)return null;
+  try{return decodeURIComponent(segment);}catch{return segment;}
+}
 const safeURL = value => { if(!value)return ''; try { const u = new URL(value, location.origin); return ['https:', 'http:'].includes(u.protocol) ? u.href : ''; } catch { return ''; } };
 const image = (url, alt = '', cls = '') => `<img src="${esc(safeURL(url))}" alt="${esc(alt)}" class="${cls}" loading="lazy" onerror="this.hidden=true"/>`;
 const button = (text, action, id = '', cls = '') => `<button type="button" class="btn ${cls}" data-action="${action}" data-id="${esc(id)}">${text}</button>`;
@@ -131,7 +139,7 @@ function filterLibrary() {
   let list = published.filter(e => e.kind === 'series');
   list = list.filter(e => normalize([e.data.title, e.data.vietnamese, ...Object.values(e.data.titles||{}), ...published.filter(s=>s.parent_id===e.id).flatMap(s=>[s.data.title,s.data.artist])].join(' ')).includes(q));
   list.sort((a,b) => a.data.title.localeCompare(b.data.title));
-  $('#library-grid').innerHTML = list.length ? list.map(e=>`<article class="card"><a href="${href({series:e.id})}"><div class="poster">${image(e.data.cover,e.data.title)}</div><div><h3 title="${esc(e.data.title)}">${esc(e.data.title)}</h3><p>${esc(e.data.vietnamese||e.data.titles?.native||'')}</p><div class="card-meta"><span>${esc(e.data.year||'—')}</span>${songCountHTML(countSongs(e.id))}${e.data.format&&e.data.format!=='ANIME'?'<span>·</span><span>'+esc(e.data.format)+'</span>':''}</div></div></a></article>`).join('') : '<div class="empty">Chưa có phim phù hợp. Thử đổi từ khoá.</div>';
+  $('#library-grid').innerHTML = list.length ? list.map(e=>`<article class="card"><a href="${seriesHref(e.id)}"><div class="poster">${image(e.data.cover,e.data.title)}</div><div><h3 title="${esc(e.data.title)}">${esc(e.data.title)}</h3><p>${esc(e.data.vietnamese||e.data.titles?.native||'')}</p><div class="card-meta"><span>${esc(e.data.year||'—')}</span>${songCountHTML(countSongs(e.id))}${e.data.format&&e.data.format!=='ANIME'?'<span>·</span><span>'+esc(e.data.format)+'</span>':''}</div></div></a></article>`).join('') : '<div class="empty">Chưa có phim phù hợp. Thử đổi từ khoá.</div>';
 }
 function songAnchorBase(entry) {
   const tail=String(entry.id||'song').split('/').at(-1);
@@ -465,7 +473,7 @@ async function handleAction(action,id) {
   }
   if(action==='preview'||action==='preview-current'){
     const entry=drafts.find(e=>e.id===id);if(!entry)return;
-    history.pushState(null,'',href({view:'admin',preview:entry.kind==='series'?entry.id:entry.parent_id}));renderDetail(entry.kind==='series'?entry.id:entry.parent_id,true);if(entry.kind==='song')document.getElementById(`song-${encodeURIComponent(entry.id)}`)?.scrollIntoView();return;
+    history.pushState(null,'',href({view:'admin',preview:entry.kind==='series'?entry.id:entry.parent_id}));renderDetail(entry.kind==='series'?entry.id:entry.parent_id,true);if(entry.kind==='song'){const songs=drafts.filter(song=>song.kind==='song'&&song.parent_id===entry.parent_id);document.getElementById(songAnchorId(entry,songs))?.scrollIntoView();}return;
   }
   if(action==='copy'){const entry=[...drafts,...published].find(e=>e.id===id);await navigator.clipboard.writeText(entry.data.body||'');notice('Đã sao chép lời.');return;}
   if(action==='logout'){await store.logout();await route();return;}
@@ -493,10 +501,13 @@ async function route() {
       if(store.configured&&!store.signedIn){renderLogin();return;}
       drafts=await store.listDrafts();if(version!==routeVersion)return;
       if(params.has('preview'))renderDetail(params.get('preview'),true);else renderAdmin();
-    }else if(params.has('series'))renderDetail(params.get('series'));else renderLibrary();
+    }else {
+      const seriesId=params.get('series')||seriesIdFromPath(location.pathname);
+      if(seriesId)renderDetail(seriesId);else renderLibrary();
+    }
     if(location.hash){
       let hash=location.hash.slice(1);try{hash=decodeURIComponent(hash);}catch{}
-      const seriesId=params.get('series'),songs=published.filter(e=>e.kind==='song'&&e.parent_id===seriesId);
+      const seriesId=params.get('series')||seriesIdFromPath(location.pathname),songs=published.filter(e=>e.kind==='song'&&e.parent_id===seriesId);
       const target=songs.find(song=>{
         const anchor=songAnchorId(song,songs);
         return hash===anchor||hash===`song-${anchor}`||hash===`song-${encodeURIComponent(song.id)}`||hash===song.id.split('/').at(-1);
@@ -505,6 +516,8 @@ async function route() {
       document.getElementById(targetId)?.scrollIntoView();
       if(target&&hash!==targetId)history.replaceState(history.state,'',`${location.pathname}${location.search}#${targetId}`);
     }
+    const legacySeriesId=params.get('series');
+    if(legacySeriesId){const suffix=location.hash||'';history.replaceState(history.state,'',`${seriesHref(legacySeriesId)}${suffix}`);}
   }catch(error){main.innerHTML=`<section class="panel"><h2>Chưa tải được nội dung</h2><p class="error-box">${esc(error.message)}</p><a class="btn" href="${href({view:'admin'})}">Mở quản lý / đăng nhập</a></section>`;}
 }
 document.addEventListener('click',e=>{

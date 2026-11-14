@@ -31,7 +31,7 @@ body .detail-header .eyebrow { font-size: 13px; }
 body .detail-header p.detail-vietnamese { font-size: 16px; line-height: 1.5; margin: 4px 0; }
 body .detail-header p.detail-native { font-size: 13px; margin: 4px 0; }
 
-body .detail-back { display: inline-flex; align-items: center; align-self: flex-start; padding: 11px 16px; margin: 0; border: 1px solid #a89ad65c; border-radius: 999px; color: #e2dcfa; background: #19243aef; font-size: 12px; line-height: 1.4; }
+body .detail-back { display: inline-flex; align-items: center; align-self: flex-start; padding: 11px 16px; margin: 0; border: 1px solid #a89ad65c; border-radius: 999px; color: #e2dcfa; background: #19243aef; font-size: 14px; line-height: 1.4; }
 body .detail-back:hover { background: #303551; border-color: #b7a5ec; color: #fff; }
 body .detail-back:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
