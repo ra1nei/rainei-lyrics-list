@@ -204,10 +204,10 @@ test('Navigation preserves custom group titles and escapes song metadata',()=>{
   assert.match(html,/Buổi diễn đặc biệt/);
   assert.match(html,/&lt;b&gt;Song&lt;\/b&gt;/);
   assert.match(html,/A &amp; B/);
-  assert.match(html,/#song-song%2520a/);
+  assert.match(html,/#song-song-a/);
 });
 
-test('Every TOC URL resolves to its song DOM id after browser fragment decoding',()=>{
+test('Every TOC URL uses a clean fragment that resolves directly to its song DOM id',()=>{
   const {context}=harness();
   for(const id of ['plain-id','frieren/01_season-1/01_yuusha','bài hát / 100% #test']){
     context.song={id,data:{title:'Test',type:'OP',group:'Season',body:''}};
@@ -215,7 +215,8 @@ test('Every TOC URL resolves to its song DOM id after browser fragment decoding'
     const toc=vm.runInContext('songTOCHTML([song],{title:"Anime"})',context);
     const domId=article.match(/id="([^"]+)"/)[1];
     const fragment=toc.match(/href="#([^"]+)"/)[1];
-    assert.equal(decodeURIComponent(fragment),domId);
+    assert.equal(fragment,`#${domId}`);
+    assert.match(fragment,/^#song-[a-z0-9-]+$/);
   }
 });
 

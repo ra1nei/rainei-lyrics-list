@@ -133,9 +133,24 @@ function filterLibrary() {
   list.sort((a,b) => a.data.title.localeCompare(b.data.title));
   $('#library-grid').innerHTML = list.length ? list.map(e=>`<article class="card"><a href="${href({series:e.id})}"><div class="poster">${image(e.data.cover,e.data.title)}</div><div><h3 title="${esc(e.data.title)}">${esc(e.data.title)}</h3><p>${esc(e.data.vietnamese||e.data.titles?.native||'')}</p><div class="card-meta"><span>${esc(e.data.year||'—')}</span>${songCountHTML(countSongs(e.id))}${e.data.format&&e.data.format!=='ANIME'?'<span>·</span><span>'+esc(e.data.format)+'</span>':''}</div></div></a></article>`).join('') : '<div class="empty">Chưa có phim phù hợp. Thử đổi từ khoá.</div>';
 }
-function songHTML(entry) {
+function songAnchorBase(entry) {
+  const tail=String(entry.id||'song').split('/').at(-1);
+  const slug=tail.replace(/^\d+[_-]*/, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  return `song-${slug||'untitled'}`;
+}
+function songAnchorId(entry, songs=[]) {
+  const used=new Set();
+  for(const song of songs.length?songs:[entry]){
+    const base=songAnchorBase(song);let candidate=base,suffix=2;
+    while(used.has(candidate))candidate=`${base}-${suffix++}`;
+    used.add(candidate);
+    if(song.id===entry.id)return candidate;
+  }
+  return songAnchorBase(entry);
+}
+function songHTML(entry, songs=[]) {
   const d=entry.data;
-  return `<article class="song panel" id="song-${encodeURIComponent(entry.id)}"><header class="song-heading"><div class="song-title-row"><span class="badge song-type">${esc(d.type||'MISC')}</span><h2>${esc(d.title)}</h2></div>${d.artist?`<p class="song-artist">— ${esc(d.artist)}</p>`:''}</header>${d.video&&safeURL(d.video)?`<video controls playsinline preload="none" poster="${esc(safeURL(d.poster))}" src="${esc(safeURL(d.video))}"></video>`:''}<div class="song-lyrics-row"><div class="lyrics">${micromark(d.body||'', {allowDangerousHtml:false,allowDangerousProtocol:false})}</div><button type="button" class="copy-lyrics" data-action="copy" data-id="${esc(entry.id)}" aria-label="Sao chép lời" title="Sao chép lời"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg></button></div></article>`;
+  return `<article class="song panel" id="${songAnchorId(entry,songs)}"><header class="song-heading"><div class="song-title-row"><span class="badge song-type">${esc(d.type||'MISC')}</span><h2>${esc(d.title)}</h2></div>${d.artist?`<p class="song-artist">— ${esc(d.artist)}</p>`:''}</header>${d.video&&safeURL(d.video)?`<video controls playsinline preload="none" poster="${esc(safeURL(d.poster))}" src="${esc(safeURL(d.video))}"></video>`:''}<div class="song-lyrics-row"><div class="lyrics">${micromark(d.body||'', {allowDangerousHtml:false,allowDangerousProtocol:false})}</div><button type="button" class="copy-lyrics" data-action="copy" data-id="${esc(entry.id)}" aria-label="Sao chép lời" title="Sao chép lời"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg></button></div></article>`;
 }
 function songTOCHTML(songs, series) {
   const groups = new Map();
@@ -156,7 +171,7 @@ function songTOCHTML(songs, series) {
     return `<section class="toc-group" aria-labelledby="toc-group-${index}"><h3 id="toc-group-${index}">${esc(label)}</h3><div class="toc-tracks">${rows.map(song => {
       const type = song.data.type || 'MISC'; counts[type] = (counts[type] || 0) + 1;
       const code = type + (totals[type] > 1 && ['OP','ED','MV'].includes(type) ? counts[type] : '');
-      return `<a class="toc-song" href="#${encodeURIComponent(`song-${encodeURIComponent(song.id)}`)}"><span class="toc-type">${esc(code)}</span><span class="toc-song-info"><span class="toc-song-title">${esc(song.data.title)}</span>${song.data.artist ? `<span class="toc-artist">${esc(song.data.artist)}</span>` : ''}</span></a>`;
+      return `<a class="toc-song" href="#${songAnchorId(song,songs)}"><span class="toc-type">${esc(code)}</span><span class="toc-song-info"><span class="toc-song-title">${esc(song.data.title)}</span>${song.data.artist ? `<span class="toc-artist">${esc(song.data.artist)}</span>` : ''}</span></a>`;
     }).join('')}</div></section>`;
   }).join('');
 }
@@ -168,7 +183,7 @@ function renderDetail(id, preview = false) {
   const songs=source.filter(e=>e.kind==='song'&&e.parent_id===id).sort(compareAlbumSongs);
   const d=entry.data;
   document.title=`${d.title} · Rainei`;
-  main.innerHTML=`${preview?'<div class="preview-label">Xem trước bản nháp · Chỉ quản trị viên đang đăng nhập được xem.</div>':''}<div class="detail-header">${image(d.cover,d.title)}<div><span class="eyebrow">${[d.format,d.year].filter(Boolean).map(esc).join(' · ')}</span><h1>${esc(d.title)}</h1>${d.vietnamese?`<p class="muted detail-vietnamese">${esc(d.vietnamese)}</p>`:''}${d.titles?.native?`<p class="muted detail-native">${esc(d.titles.native)}</p>`:''}${d.sourceUrl?`<a class="link" href="${esc(safeURL(d.sourceUrl))}" target="_blank" rel="noopener noreferrer">Xem trên AniList ↗</a>`:''}</div></div><div class="detail-layout"><section>${songs.map(songHTML).join('')||'<div class="panel empty">Chưa có bài hát.</div>'}</section><aside class="detail-sidebar"><a class="back detail-back" href="${preview?href({view:'admin'}):href()}">← ${preview?'Về quản lý':'Thư viện phim'}</a><nav class="toc panel" aria-label="Danh sách bài hát"><h2 class="eyebrow toc-heading">DANH SÁCH BÀI</h2>${songTOCHTML(songs,d)}</nav></aside></div>`;
+  main.innerHTML=`${preview?'<div class="preview-label">Xem trước bản nháp · Chỉ quản trị viên đang đăng nhập được xem.</div>':''}<div class="detail-header">${image(d.cover,d.title)}<div><span class="eyebrow">${[d.format,d.year].filter(Boolean).map(esc).join(' · ')}</span><h1>${esc(d.title)}</h1>${d.vietnamese?`<p class="muted detail-vietnamese">${esc(d.vietnamese)}</p>`:''}${d.titles?.native?`<p class="muted detail-native">${esc(d.titles.native)}</p>`:''}${d.sourceUrl?`<a class="link" href="${esc(safeURL(d.sourceUrl))}" target="_blank" rel="noopener noreferrer">Xem trên AniList ↗</a>`:''}</div></div><div class="detail-layout"><section>${songs.map(song=>songHTML(song,songs)).join('')||'<div class="panel empty">Chưa có bài hát.</div>'}</section><aside class="detail-sidebar"><a class="back detail-back" href="${preview?href({view:'admin'}):href()}">← ${preview?'Về quản lý':'Thư viện phim'}</a><nav class="toc panel" aria-label="Danh sách bài hát"><h2 class="eyebrow toc-heading">DANH SÁCH BÀI</h2>${songTOCHTML(songs,d)}</nav></aside></div>`;
 }
 function renderLogin() {
   syncAdminLogout(false);
@@ -479,7 +494,14 @@ async function route() {
       drafts=await store.listDrafts();if(version!==routeVersion)return;
       if(params.has('preview'))renderDetail(params.get('preview'),true);else renderAdmin();
     }else if(params.has('series'))renderDetail(params.get('series'));else renderLibrary();
-    if(location.hash){try{const hash=decodeURIComponent(location.hash.slice(1));const legacy=published.find(e=>e.kind==='song'&&e.parent_id===params.get('series')&&e.id.split('/').at(-1)===hash);(document.getElementById(hash)||document.getElementById(`song-${encodeURIComponent(legacy?.id||'')}`))?.scrollIntoView();}catch{}}
+    if(location.hash){
+      let hash=location.hash.slice(1);try{hash=decodeURIComponent(hash);}catch{}
+      const seriesId=params.get('series'),songs=published.filter(e=>e.kind==='song'&&e.parent_id===seriesId);
+      const target=songs.find(song=>hash===songAnchorId(song,songs)||hash===`song-${encodeURIComponent(song.id)}`||hash===song.id.split('/').at(-1));
+      const targetId=target?songAnchorId(target,songs):hash;
+      document.getElementById(targetId)?.scrollIntoView();
+      if(target&&hash!==targetId)history.replaceState(history.state,'',`${location.pathname}${location.search}#${targetId}`);
+    }
   }catch(error){main.innerHTML=`<section class="panel"><h2>Chưa tải được nội dung</h2><p class="error-box">${esc(error.message)}</p><a class="btn" href="${href({view:'admin'})}">Mở quản lý / đăng nhập</a></section>`;}
 }
 document.addEventListener('click',e=>{
