@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {mergeAlbumRows,normalizeMediaURL,compareAlbumSongs} from '../src/lib/album.mjs';
-import {createStore} from '../src/lib/store.mjs';
+import {createTestStore as createStore} from './helpers/supabase.mjs';
 const songs=[{id:'a1',kind:'song',parent_id:'a',data:{title:'One',artist:'Artist',group:'Season 1',body:'Original 1',type:'OP',video:'https://example.com/video.mp4'}},{id:'a2',kind:'song',parent_id:'a',data:{title:'Two',artist:'Artist',group:'Season 1',type:'ED',body:'Original 2'}},{id:'b1',kind:'song',parent_id:'b',data:{title:'Other anime',body:'Untouched'}}];
 test('Expanded album merges all edited lyrics, preserving metadata and other anime',()=>{
   const result=mergeAlbumRows('a',songs,[{id:'a1',data:{title:'One',body:'New lyrics 1',order:'2'}},{id:'a2',data:{title:'Two',body:'New lyrics 2',order:'1'}}]);
@@ -40,19 +40,15 @@ test('Adding a blank song keeps existing unsaved lyrics in the editor',()=>{
   assert.equal(result[0].data.body,'Still unsaved');assert.equal(result[1].data.title,'');assert.equal(result[1].parent_id,'a');
 });
 test('Saving multiple drafts keeps published lyrics and unrelated anime unchanged',async()=>{
-  const values=new Map();globalThis.localStorage={getItem:k=>values.get(k)||null,setItem:(k,v)=>values.set(k,v)};
-  const storage={getItem:()=>null,setItem:()=>{},removeItem:()=>{}};
   const series=[{id:'a',kind:'series',parent_id:null,data:{title:'A'}},{id:'b',kind:'series',parent_id:null,data:{title:'B'}}];
-  const store=createStore({seed:[...series,...songs],storage});
+  const store=createStore({seed:[...series,...songs]});
   await store.saveMany(mergeAlbumRows('a',songs,[{id:'a1',data:{body:'Changed 1'}},{id:'a2',data:{body:'Changed 2'}}]));
   const drafts=await store.listDrafts(),published=await store.listPublic();
   assert.equal(drafts.find(e=>e.id==='a1').data.body,'Changed 1');assert.equal(drafts.find(e=>e.id==='a2').data.body,'Changed 2');assert.equal(drafts.find(e=>e.id==='b1').data.body,'Untouched');assert.equal(published.find(e=>e.id==='a1').data.body,'Original 1');
 });
 test('Song drafts save with an unpublished or published anime without publishing the song',async()=>{
   for(const publishParent of [false,true]){
-    const values=new Map();globalThis.localStorage={getItem:k=>values.get(k)||null,setItem:(k,v)=>values.set(k,v)};
-    const storage={getItem:()=>null,setItem:()=>{},removeItem:()=>{}};
-    const store=createStore({seed:[],storage});
+    const store=createStore();
     await store.save({id:'a',kind:'series',parent_id:null,data:{title:'Anime'}});
     if(publishParent)await store.publish('a');
     await store.save({id:'s',kind:'song',parent_id:'a',data:{title:'Private song',body:'Draft lyrics'}});

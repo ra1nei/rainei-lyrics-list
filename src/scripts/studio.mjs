@@ -40,7 +40,7 @@ const songPublicationSummaryHTML = songs => {
   const remaining = songs.length - live;
   return songs.length ? `<div class="song-publication-summary"><span class="song-progress">${live}/${songs.length} bài đã xuất bản</span>${remaining ? `<span class="song-drafts">Còn ${remaining} bài nháp</span>` : ''}</div>` : '<div class="song-publication-summary">Chưa có bài hát</div>';
 };
-let store, seed = [], published = [], drafts = [], current = null, dirty = false, actionPending = false;
+let store, published = [], drafts = [], current = null, dirty = false, actionPending = false;
 let albumSeriesId = null, albumRows = [];
 let publishSelectionMode = false, selectionSeriesId = null, selectedSongIds = new Set();
 let animeSelectionMode = false, selectedAnimeIds = new Set();
@@ -54,7 +54,7 @@ async function task(fn) { if(actionPending)return;actionPending=true;const butto
 function status(entry) { const p = published.find(e => e.id === entry.id); return p ? (JSON.stringify(p.data) === JSON.stringify(entry.data) ? ['live', 'Đã xuất bản'] : ['draft', 'Có bản sửa nháp']) : ['draft', 'Bản nháp']; }
 function syncAdminLogout(inAdmin) {
   const logout = document.querySelector('#admin-logout');
-  if (logout) logout.hidden = !(inAdmin && store?.configured && store.signedIn);
+  if (logout) logout.hidden = !(inAdmin && store?.signedIn);
 }
 function shell(content) {
   syncAdminLogout(true);
@@ -199,7 +199,7 @@ function renderLogin() {
   $('#login-form').addEventListener('submit',e=>{e.preventDefault();task(async()=>{const data=new FormData(e.target);await store.login(data.get('email'),data.get('password'));await loadAdmin();});});
 }
 async function loadAdmin() {
-  if(store.configured&&!store.signedIn){renderLogin();return;}
+  if(!store.signedIn){renderLogin();return;}
   drafts=await store.listDrafts();
   renderAdmin();
 }
@@ -272,7 +272,7 @@ function renderResults() {
 }
 function animeEditorActions(entry) {
   const live=published.some(e=>e.id===entry.id),saved=drafts.some(e=>e.id===entry.id);
-  return `<div class="anime-editor-actions"><div class="editor-action-main" role="group" aria-label="Xem và lưu nội dung">${button('Xem trước','preview-current',entry.id,'action-preview')}<button type="submit" class="btn">Lưu nháp</button>${button(store.configured?'Xuất bản':'Xuất bản thử trên máy này','publish-current',entry.id,'primary')}</div>${live||saved?`<div class="editor-action-secondary" role="group" aria-label="Quản lý xuất bản và xoá">${live?button('Gỡ xuất bản','unpublish',entry.id,'action-unpublish'):''}${saved?button('Xoá phim','delete',entry.id,'danger action-delete'):''}</div>`:''}</div>`;
+  return `<div class="anime-editor-actions"><div class="editor-action-main" role="group" aria-label="Xem và lưu nội dung">${button('Xem trước','preview-current',entry.id,'action-preview')}<button type="submit" class="btn">Lưu nháp</button>${button('Xuất bản','publish-current',entry.id,'primary')}</div>${live||saved?`<div class="editor-action-secondary" role="group" aria-label="Quản lý xuất bản và xoá">${live?button('Gỡ xuất bản','unpublish',entry.id,'action-unpublish'):''}${saved?button('Xoá phim','delete',entry.id,'danger action-delete'):''}</div>`:''}</div>`;
 }
 function renderEditor(entry) {
   current=structuredClone(entry);dirty=false;albumSeriesId=null;const d=current.data;
@@ -436,7 +436,7 @@ async function handleAction(action,id) {
   if(action==='album-publish'){
     await saveSingleAlbumSong(id);
     if(!published.some(e=>e.id===albumSeriesId&&e.kind==='series')){notice('Đã lưu bản nháp bài hát. Anime chưa công khai nên bài hát vẫn được giữ riêng tư.');return;}
-    await store.publish(id);published=await store.listPublic();const pending=readAlbum(false),wasDirty=dirty;renderAlbum(current,wasDirty?pending:undefined,openSongIds());dirty=wasDirty;notice(store.configured?'Đã xuất bản bài hát.':'Đã xuất bản thử bài hát trên trình duyệt này.');return;
+    await store.publish(id);published=await store.listPublic();const pending=readAlbum(false),wasDirty=dirty;renderAlbum(current,wasDirty?pending:undefined,openSongIds());dirty=wasDirty;notice('Đã xuất bản bài hát.');return;
   }
   if(action==='album-unpublish'){
     await store.unpublish(id);published=await store.listPublic();const pending=readAlbum(false),wasDirty=dirty;renderAlbum(current,wasDirty?pending:undefined);notice('Đã gỡ xuất bản bài hát.');return;
@@ -458,7 +458,7 @@ async function handleAction(action,id) {
   }
   if(action==='edit'){renderEditor(drafts.find(e=>e.id===id));return;}
   if(action==='publish-current'){
-    await saveCurrent();await store.publish(current.id);published=await store.listPublic();renderEditor(current);notice(store.configured?'Đã xuất bản. Khách sẽ thấy khi tải lại trang.':'Đã xuất bản thử. Chỉ trình duyệt này nhìn thấy.');return;
+    await saveCurrent();await store.publish(current.id);published=await store.listPublic();renderEditor(current);notice('Đã xuất bản. Khách sẽ thấy khi tải lại trang.');return;
   }
   if(action==='unpublish'){
     if(!confirm('Gỡ xuất bản? Nếu là phim, tất cả bài hát trong phim cũng sẽ được gỡ công khai. Bản nháp vẫn được giữ.'))return;
@@ -498,7 +498,7 @@ async function route() {
   try{
     published=await store.listPublic();if(version!==routeVersion)return;
     if(params.get('view')==='admin'){
-      if(store.configured&&!store.signedIn){renderLogin();return;}
+      if(!store.signedIn){renderLogin();return;}
       drafts=await store.listDrafts();if(version!==routeVersion)return;
       if(params.has('preview'))renderDetail(params.get('preview'),true);else renderAdmin();
     }else {
@@ -552,10 +552,8 @@ window.addEventListener('scroll',()=>closeEntryContextMenu(),true);
 window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
 async function boot(){
   try{
-    if(!app.dataset.url&&!app.dataset.key){const response=await fetch(`${base}/catalog.json`);if(!response.ok)throw new Error('Không đọc được dữ liệu mẫu.');seed=await response.json();}
-    if(Boolean(app.dataset.url)!==Boolean(app.dataset.key))throw new Error('Cần cấu hình đủ URL và publishable/anon key của Supabase.');
-    store=createStore({url:app.dataset.url,key:app.dataset.key,seed});
-    if(!store.configured){const banner=document.querySelector('#mode-banner');banner.hidden=false;banner.textContent='BẢN THỬ · Dữ liệu lưu trên trình duyệt này. Xuất bản thử chưa công khai lên Internet. Cần kết nối Supabase để dùng thật.';}
+    if(!app.dataset.url || !app.dataset.key) throw new Error('Chưa cấu hình Supabase. Hãy thiết lập PUBLIC_SUPABASE_URL và PUBLIC_SUPABASE_ANON_KEY rồi build lại website.');
+    store=createStore({url:app.dataset.url,key:app.dataset.key});
     await route();
   }catch(error){main.innerHTML=`<p class="error-box">${esc(error.message)}</p>`;}
 }

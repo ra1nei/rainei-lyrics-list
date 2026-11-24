@@ -1,14 +1,13 @@
-# rainei lyrics list
+# Rainei Lyrics
 
-> [!NOTE]
-> **Giới thiệu**  
-> Tổng hợp lời Việt hoá các bài hát do mình thực hiện.
+Tổng hợp lời Việt hoá các bài hát do mình thực hiện.
 
-> [!TIP]
-> **Sử dụng & Bản quyền**  
-> Bạn có thể tự do sử dụng lại lời dịch — nếu có ghi nguồn (credit) thì mình rất cảm kích.
+[Truy cập website](https://ra1nei.github.io/rainei-lyrics-list/).
 
-Nếu có góp ý về lời dịch, bạn vui lòng **[mở Issue tại đây](https://github.com/ra1nei/rainei-lyrics-list/issues)**.
+Astro cung cấp giao diện tĩnh; AniList cung cấp tên và poster anime; Supabase cung cấp đăng nhập, bản nháp và nội dung đã xuất bản.
 
----
-Truy cập trang web tại [đây](https://ra1nei.github.io/rainei-lyrics-list/).
+Lời bài hát lưu tại `entries.data.body` và `published_entries.data.body` trong Supabase. Repo không chứa file lời MDX hay CMS cũ.
+
+Xem [SETUP.md](SETUP.md) để chạy local, cấu hình và deploy. Các poster đã nhập trong `public/imported-posters` vẫn được giữ để không làm hỏng URL hiện có.
+
+Bạn có thể sử dụng lại lời dịch; nếu có ghi nguồn (credit) thì mình rất cảm kích. [Góp ý qua GitHub Issues](https://github.com/ra1nei/rainei-lyrics-list/issues).

@@ -18,7 +18,6 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
         <nav><a href={`${base}/`} data-nav="library">Thư viện</a><a href={`${base}/?view=admin`} data-nav="admin">Quản lý</a></nav>
         <button id="admin-logout" class="btn topbar-logout" type="button" data-action="logout" hidden>Đăng xuất</button>
       </header>
-      <div id="mode-banner" class="mode-banner" hidden></div>
       <main id="main" tabindex="-1"><p class="loading">Đang mở thư viện…</p></main>
       <footer><span>Rainei Lyrics List</span><span>Ảnh và thông tin phim từ <a href="https://anilist.co" target="_blank" rel="noopener noreferrer">AniList</a></span></footer>
       <div id="notice" role="status" aria-live="polite" hidden></div>

@@ -1,10 +1,17 @@
 ---
-import { getCollection } from 'astro:content';
 import RuntimeApp from '../../components/RuntimeApp.astro';
 
-export async function getStaticPaths() {
-  const series = await getCollection('series');
-  return series.map(item => ({ params: { id: item.id } }));
+export function getStaticPaths() {
+  // Serve existing links with HTTP 200. RuntimeApp loads their content from Supabase.
+  const legacySlugs = [
+    'chou-kaguya-hime',
+    'girls-band-cry',
+    'kyoukai-no-kanata',
+    'sousou-no-frieren',
+    'takopi-no-genzai',
+    'tamako-love-story',
+  ];
+  return legacySlugs.map(id => ({ params: { id } }));
 }
 ---
 <RuntimeApp />

@@ -18,9 +18,24 @@ function harness(){
   context.mergeAlbumRows=mergeAlbumRows;
   context.filterByPublication=filterByPublication;
   vm.createContext(context);vm.runInContext(code,context);
-  context.entries=[series,...songs];vm.runInContext('drafts=entries;published=[];store={configured:false};',context);
+  context.entries=[series,...songs];vm.runInContext('drafts=entries;published=[];store={signedIn:true};',context);
   return {context,main,node};
 }
+test('Missing Supabase settings show setup guidance without loading legacy data',async()=>{
+  for(const settings of [{},{url:'https://database.test'},{key:'public-test'}]){
+    const {context,main,node}=harness();
+    Object.assign(node('#app').dataset,settings);
+    let requests=0;
+    context.fetch=async()=>{requests++;throw Error('Unexpected catalog request');};
+    context.createStore=()=>{throw Error('Unexpected store initialization');};
+    await vm.runInContext('boot()',context);
+    assert.equal(requests,0);
+    assert.match(main.innerHTML,/Chưa cấu hình Supabase/);
+    assert.match(main.innerHTML,/PUBLIC_SUPABASE_URL/);
+    assert.match(main.innerHTML,/PUBLIC_SUPABASE_ANON_KEY/);
+  }
+});
+
 test('Admin overview contains persistent inline search and only anime entries',()=>{
   const {context,main}=harness();vm.runInContext('renderAdmin()',context);
   assert.match(main.innerHTML,/id="anilist-search"/);assert.match(main.innerHTML,/id="anilist-dropdown"/);assert.match(main.innerHTML,/data-action="open-anime"/);
@@ -72,7 +87,7 @@ test('Public anime cards omit redundant ANIME metadata when no format is supplie
 });
 test('Publish all stays within the current anime and reports partial failure accurately',async()=>{
   const {context,node}=harness();const calls=[];let publishedSongs=[];
-  context.mockStore={configured:true,publish:async id=>{calls.push(id);if(id==='s2')throw Error('Connection interrupted');publishedSongs.push(songs[0]);},listPublic:async()=>[series,...publishedSongs]};
+  context.mockStore={publish:async id=>{calls.push(id);if(id==='s2')throw Error('Connection interrupted');publishedSongs.push(songs[0]);},listPublic:async()=>[series,...publishedSongs]};
   context.setTimeout=()=>0;
   vm.runInContext('store=mockStore;published=[entries[0]];current=entries[0];albumSeriesId="anime";albumRows=entries.filter(e=>e.parent_id==="anime");saveAlbum=async()=>{};',context);
   await vm.runInContext('handleAction("album-publish-all", "anime")',context);
@@ -80,7 +95,7 @@ test('Publish all stays within the current anime and reports partial failure acc
 });
 test('Song selection can select all or clear, then publish only the checked song',async()=>{
   const {context,node}=harness();const calls=[],saved=[];
-  context.mockStore={configured:true,publish:async id=>calls.push(id),listPublic:async()=>[series,songs[1]]};context.setTimeout=()=>0;
+  context.mockStore={publish:async id=>calls.push(id),listPublic:async()=>[series,songs[1]]};context.setTimeout=()=>0;
   context.recordSaved=ids=>saved.push([...ids]);
   vm.runInContext('store=mockStore;published=[entries[0]];renderAlbum(entries[0]);saveAlbum=async ids=>recordSaved(ids);',context);
   await vm.runInContext('handleAction("batch-start")',context);
@@ -122,7 +137,7 @@ test('Filtering songs keeps editor markup intact and select-all only selects mat
 });
 test('Quick toggle asks before hiding a film with public songs and uses the unpublish action',async()=>{
   const {context}=harness();const calls=[];
-  context.mockStore={configured:true,unpublish:async id=>calls.push(id),listPublic:async()=>[]};context.setTimeout=()=>0;context.confirm=()=>false;
+  context.mockStore={unpublish:async id=>calls.push(id),listPublic:async()=>[]};context.setTimeout=()=>0;context.confirm=()=>false;
   vm.runInContext('store=mockStore;published=[entries[0],entries[1]];',context);
   await vm.runInContext('toggleEntryPublication("anime")',context);assert.deepEqual(calls,[]);
   context.confirm=()=>true;await vm.runInContext('toggleEntryPublication("anime")',context);assert.deepEqual(calls,['anime']);
@@ -149,7 +164,7 @@ test('Admin cards show child publication counts without additional controls',()=
 
 test('Logout is separate in the header and only visible in signed-in management',()=>{
   const {context,main,node}=harness();
-  vm.runInContext('store={configured:true,signedIn:true};renderAdmin()',context);
+  vm.runInContext('store={signedIn:true};renderAdmin()',context);
   assert.equal(node('#admin-logout').hidden,false);
   assert.doesNotMatch(main.innerHTML,/data-action="logout"/);
   assert.match(main.innerHTML,/Dữ liệu <span/);
@@ -214,7 +229,7 @@ test('Every TOC URL uses a clean fragment that resolves directly to its song DOM
     const article=vm.runInContext('songHTML(song)',context);
     const toc=vm.runInContext('songTOCHTML([song],{title:"Anime"})',context);
     const domId=article.match(/id="([^"]+)"/)[1];
-    const fragment=toc.match(/href="#([^"]+)"/)[1];
+    const fragment=toc.match(/href="(#[^"]+)"/)[1];
     assert.equal(fragment,`#${domId}`);
     assert.match(fragment,/^#[a-z0-9-]+$/);
     assert.doesNotMatch(fragment,/^#song-/);
