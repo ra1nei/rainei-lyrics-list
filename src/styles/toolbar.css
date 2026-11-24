@@ -1,0 +1,50 @@
+body .admin-page-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin: 12px 0 32px; }
+body .admin-page-header h1 { margin: 0; font-size: 29px; letter-spacing: -.8px; }
+body .admin-options { position: relative; flex-shrink: 0; }
+body .admin-options > summary { display: flex; align-items: center; gap: 14px; padding: 10px 13px; font-size: 12px; color: #bcc7df; border: 1px solid #68739850; border-radius: 9px; cursor: pointer; list-style: none; }
+body .admin-options > summary::-webkit-details-marker { display: none; }
+body .admin-options > summary:hover { background: #8b8cd610; }
+body .admin-options-menu { position: absolute; top: calc(100% + 8px); right: 0; width: 210px; padding: 7px; z-index: 35; border: 1px solid #6a72965c; border-radius: 11px; background: #222b43; box-shadow: 0 14px 35px #0005; }
+body .admin-options-menu .btn { display: flex; justify-content: flex-start; width: 100%; border: none; background: transparent; text-align: left; padding: 12px; font-size: 12px; }
+body .admin-options-menu .btn:hover { background: #8b8cd61a; }
+body .admin-options-menu .btn + .btn { border-top: 1px solid #b1b5d014; border-radius: 0; }
+body .anime-bulk-actions { display: block; margin-bottom: 24px; padding: 14px 0; border-top: 1px solid #8c90be25; border-bottom: 1px solid #8c90be25; }
+body .anime-selection-idle { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+body .anime-selection-idle h2 { margin: 0; font-size: 17px; letter-spacing: -.3px; }
+body .anime-selection-idle .count-label { margin-left: 6px; }
+body .anime-bulk-actions.selecting .anime-selection-idle { display: none; }
+body .anime-selection-tools, body .batch-selection-tools { width: 100%; align-items: center; grid-template-columns: minmax(130px,1fr) auto auto; gap: 20px; }
+body .anime-bulk-actions.selecting .anime-selection-tools, body .batch-selecting .batch-selection-tools { display: grid; }
+body .selection-options { display: flex; gap: 8px; align-items: center; }
+body .selection-options .btn { background: transparent; border-color: #7b85ae40; font-weight: 500; }
+body .selection-count { color: #d9d2ff; font-size: 12px; white-space: nowrap; }
+body .anime-selection-tools > .btn.primary, body .batch-selection-tools > .btn.primary { min-width: 115px; }
+body .batch-selecting .album-savebar > #album-save-state { display: none; }
+body .batch-selecting .batch-publish-actions { width: 100%; }
+body .batch-selecting .album-savebar { padding: 14px 18px; }
+body .batch-selecting .batch-start { display: none; }
+@media(max-width:650px) {
+  body .admin-page-header h1 { font-size: 23px; }
+  body .admin-page-header { margin-bottom: 22px; }
+  body .anime-selection-tools, body .batch-selection-tools { grid-template-columns: 1fr auto; gap: 12px; }
+  body .selection-count { grid-column: 1/-1; }
+  body .selection-options { gap: 6px; }
+  body .selection-options .btn { padding: 8px; font-size: 11px; }
+  body .anime-selection-tools > .btn.primary, body .batch-selection-tools > .btn.primary { min-width: 95px; padding: 10px; font-size: 12px; }
+}
+
+body .topbar-logout { margin-left: auto; padding: 10px 16px; font-size: 12px; flex-shrink: 0; }
+body .topbar-logout[hidden] { display: none; }
+@media(max-width:760px) {
+  body .topbar { gap: 16px; }
+  body .topbar nav { gap: 12px; }
+  body .topbar-logout { padding: 9px 10px; font-size: 11px; }
+}
+@media(max-width:460px) {
+  body .topbar { flex-wrap: wrap; height: auto; min-height: 78px; padding-top: 14px; padding-bottom: 14px; gap: 12px; }
+  body .topbar nav { margin-left: auto; }
+}
+
+body .topbar-logout { color: #ffc2ca; background: #63344340; border-color: #d8798c60; }
+body .topbar-logout:hover { color: #ffe1e5; background: #8b405657; border-color: #ed99aa99; }
+body .topbar-logout:focus-visible { outline: 2px solid #f3a2b3; outline-offset: 3px; }

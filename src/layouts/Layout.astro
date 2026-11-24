@@ -1,0 +1,78 @@
+---
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description?: string;
+  logo?: string;
+  isHome?: boolean;
+}
+
+const {
+  title,
+  description = "Tổng hợp lời Việt hoá các bài hát do mình thực hiện.",
+  logo,
+  isHome,
+} = Astro.props;
+
+const base = import.meta.env.BASE_URL;
+// Astro.site chưa chắc có khi chạy dev, nên fallback về đường dẫn tương đối.
+const canonical = Astro.site
+  ? new URL(Astro.url.pathname, Astro.site).href
+  : Astro.url.pathname;
+---
+
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+
+    {/* Phải kèm base, không thì trên GitHub Pages trình duyệt đi tìm /favicon.ico ở gốc domain */}
+    <link rel="icon" type="image/svg+xml" href={`${base}/favicon.svg`} />
+
+    {/* Link chia sẻ sang Facebook / Discord / Zalo có tiêu đề và mô tả */}
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Rainei Lyrics List" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content="vi_VN" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  </head>
+
+  <body class={`flex flex-col bg-[#0f172a] min-h-screen ${isHome ? 'lg:h-screen lg:overflow-hidden' : ''}`}>
+
+    {logo && !isHome && (
+      <header class="flex justify-center mb-8 sm:mb-12 pt-6 sm:pt-8 px-4">
+         <a href={base} class="hover:opacity-80 transition-opacity">
+            <img src={logo} alt="Series Logo" class="h-16 sm:h-24 w-auto object-contain drop-shadow-2xl" />
+          </a>
+      </header>
+    )}
+
+    <main class={isHome ? 'flex-1 w-full lg:min-h-0' : 'flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 pb-8'}>
+      <slot />
+    </main>
+
+    {!isHome && (
+      <footer class="py-8 border-t border-white/5 text-center mt-auto">
+        <p class="text-slate-500 text-sm font-medium">
+          &copy; {new Date().getFullYear()} Rainei Lyrics List.
+        </p>
+      </footer>
+    )}
+
+  </body>
+</html>

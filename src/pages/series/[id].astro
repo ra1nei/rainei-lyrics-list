@@ -1,0 +1,10 @@
+---
+import { getCollection } from 'astro:content';
+import RuntimeApp from '../../components/RuntimeApp.astro';
+
+export async function getStaticPaths() {
+  const series = await getCollection('series');
+  return series.map(item => ({ params: { id: item.id } }));
+}
+---
+<RuntimeApp />
