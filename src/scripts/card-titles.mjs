@@ -6,12 +6,14 @@ function measureTitles() {
   frame = null;
   for (const line of lines) {
     const text = line.querySelector('.card-title-text');
-    const distance = text ? Math.ceil(text.getBoundingClientRect().width - line.clientWidth) : 0;
-    const overflowing = line.clientWidth > 0 && distance > 1;
+    const textWidth = text ? Math.ceil(text.getBoundingClientRect().width) : 0;
+    const overflowing = line.clientWidth > 0 && textWidth - line.clientWidth > 1;
     line.toggleAttribute('data-overflow', overflowing);
     if (overflowing) {
-      line.style.setProperty('--title-travel', `${-distance}px`);
-      line.style.setProperty('--title-duration', `${Math.max(8, distance / 24 + 4)}s`);
+      const travelDistance = textWidth + line.clientWidth;
+      line.style.setProperty('--title-start', `${line.clientWidth}px`);
+      line.style.setProperty('--title-travel', `${-textWidth}px`);
+      line.style.setProperty('--title-duration', `${Math.max(8, travelDistance / 24 + 4)}s`);
     }
   }
 }

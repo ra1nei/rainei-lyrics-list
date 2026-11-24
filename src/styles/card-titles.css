@@ -17,8 +17,8 @@ body .card-title-line[data-overflow] > .card-title-text {
 }
 body .list-view .card > a > div:last-child { min-width: 0; flex: 1; }
 @keyframes card-title-scroll {
-  0%, 15% { transform: translateX(0); }
-  85%, 100% { transform: translateX(var(--title-travel)); }
+  0%, 10% { transform: translateX(var(--title-start)); }
+  90%, 100% { transform: translateX(var(--title-travel)); }
 }
 @media (prefers-reduced-motion: reduce) {
   body .card-title-line[data-overflow] > .card-title-text { animation: none; }
