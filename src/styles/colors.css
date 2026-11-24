@@ -144,11 +144,6 @@ body .result { background: #202d45; border-color: #56658d; }
 body .result:hover, body .result:focus-visible { background: #363758; border-color: #b9a6ff; }
 body .local-match { background: #224243; border-color: #558f8c; }
 body .local-match:hover { background: #2a5553; }
-body .anime-tabs .btn.active {
-  background: linear-gradient(110deg, #534571, #2c4a62);
-  border-color: #ae9be6;
-  color: #f1eaff;
-}
 body .album-savebar {
   background: linear-gradient(110deg, #352f51f5, #21434bf5);
   border-color: #8c85b787;

@@ -41,8 +41,11 @@ test('Admin overview contains persistent inline search and only anime entries',(
   assert.match(main.innerHTML,/id="anilist-search"/);assert.match(main.innerHTML,/id="anilist-dropdown"/);assert.match(main.innerHTML,/data-action="open-anime"/);
   assert.doesNotMatch(main.innerHTML,/data-action="search-anime"/);assert.doesNotMatch(main.innerHTML,/<textarea/);assert.doesNotMatch(main.innerHTML,/First song|Unrelated song/);
 });
-test('Song tab contains every song and lyrics in collapsed panels by default',()=>{
+test('Unified editor shows anime information before all collapsed songs',()=>{
   const {context,main}=harness();vm.runInContext('renderAlbum(entries[0])',context);
+  assert.ok(main.innerHTML.indexOf('id="entry-form"')<main.innerHTML.indexOf('id="album-form"'));
+  assert.match(main.innerHTML,/Bài hát & lời <span class="count-label">\(2\)/);
+  assert.doesNotMatch(main.innerHTML,/class="anime-tabs"|data-action="anime-info"|data-action="anime-songs"/);
   assert.equal((main.innerHTML.match(/<textarea /g)||[]).length,2);
   assert.match(main.innerHTML,/First lyrics\nSecond line/);assert.match(main.innerHTML,/&lt;script&gt;unsafe&lt;\/script&gt;/);
   assert.doesNotMatch(main.innerHTML,/Private other anime|Unrelated song/);assert.match(main.innerHTML,/data-action="batch-start"/);assert.match(main.innerHTML,/id="anilist-search"/);
@@ -50,6 +53,40 @@ test('Song tab contains every song and lyrics in collapsed panels by default',()
   assert.doesNotMatch(main.innerHTML,/<details class="panel song-editor[^>]*\sopen(?:\s|>)/);
   assert.doesNotMatch(main.innerHTML,/Lưu tất cả bản nháp/);
 });
+test('Rerendering songs preserves unsaved anime fields and tracks their dirty state independently',()=>{
+  const {context,main}=harness();
+  context.FormData=class { *[Symbol.iterator]() { yield ['title','Unsaved anime title'];yield ['vietnamese','Tên Việt chưa lưu']; } };
+  vm.runInContext('renderEditor(entries[0]);animeDirty=true;renderAlbum(entries[0],entries.slice(1,3));',context);
+  assert.match(main.innerHTML,/name="title" value="Unsaved anime title"/);
+  assert.match(main.innerHTML,/Tên Việt chưa lưu/);
+  assert.equal(vm.runInContext('animeDirty',context),true);
+  assert.equal(vm.runInContext('songsDirty',context),false);
+  assert.equal(vm.runInContext('dirty',context),true);
+});
+
+test('Untouched textarea line endings and migration timestamps do not mark songs as edited',()=>{
+  const {context}=harness();
+  context.rows=[{id:'s1',kind:'song',parent_id:'anime',data:{title:'First song',body:'\r\nFirst lyrics\r\nSecond line',order:null}}];
+  vm.runInContext('drafts=rows;',context);
+  context.normalized=[{...context.rows[0],data:{...context.rows[0].data,body:'\nFirst lyrics\nSecond line',addedAt:'2026-11-24T00:00:00Z'}}];
+  assert.equal(vm.runInContext('songsHaveChanges(normalized)',context),false);
+  context.normalized[0].data.body='Edited lyrics';
+  assert.equal(vm.runInContext('songsHaveChanges(normalized)',context),true);
+});
+
+test('Saving anime information leaves unsaved song drafts marked dirty',async()=>{
+  const {context,node}=harness();let saved;
+  context.FormData=class { *[Symbol.iterator]() { yield ['title','Saved new anime title']; } };
+  context.mockStore={save:async entry=>saved=entry,listDrafts:async()=>[saved,...songs]};
+  node('#entry-form').reportValidity=()=>true;
+  vm.runInContext('renderEditor(entries[0]);store=mockStore;animeDirty=true;songsDirty=true;syncEditorDirty()',context);
+  await vm.runInContext('saveCurrent()',context);
+  assert.equal(saved.data.title,'Saved new anime title');
+  assert.equal(vm.runInContext('animeDirty',context),false);
+  assert.equal(vm.runInContext('songsDirty',context),true);
+  assert.equal(vm.runInContext('dirty',context),true);
+});
+
 test('Inline AniList suggestions appear under the search without replacing the anime overview',async()=>{
   const {context,main,node}=harness();vm.runInContext('renderAdmin()',context);const overview=main.innerHTML;
   node('#anilist-search').value='Frieren';await vm.runInContext('runSearch(false)',context);
