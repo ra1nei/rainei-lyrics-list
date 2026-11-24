@@ -1,0 +1,3 @@
+#main:has(.admin-workspace) {
+  width: 100%;
+}

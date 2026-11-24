@@ -4,6 +4,7 @@ import { micromark } from 'micromark';
 import { mergeAlbumRows, compareAlbumSongs } from '../lib/album.mjs';
 import { filterByPublication } from '../lib/publication.mjs';
 import '../styles/admin.css';
+import '../styles/admin-width.css';
 import '../styles/colors.css';
 import '../styles/font.css';
 import '../styles/songs.css';
