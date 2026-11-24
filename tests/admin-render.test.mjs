@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-import { selectedAnime } from '../src/lib/anilist.mjs';
+import { selectedAnime, animeFormatLabel, ANIME_FORMATS, withAnimeFormats } from '../src/lib/anilist.mjs';
 import { compareAlbumSongs, mergeAlbumRows } from '../src/lib/album.mjs';
 import { normalize } from '../src/lib/store.mjs';
 import { filterByPublication } from '../src/lib/publication.mjs';
@@ -12,7 +12,7 @@ function harness(){
   const nodes=new Map();
   function node(key){if(!nodes.has(key))nodes.set(key,{dataset:{base:'/rainei-lyrics-list'},value:'romaji',hidden:false,addEventListener(type,handler){this.listeners??={};this.listeners[type]=handler;},setAttribute(){},classList:{toggle(){}},querySelector:key=>node(key),querySelectorAll:()=>[]});return nodes.get(key);}
   const main=node('#main');main.innerHTML='';
-  const context={document:{querySelector:key=>node(key),addEventListener(){}},window:{addEventListener(){}},location:{origin:'http://localhost'},URL,URLSearchParams,structuredClone,clearTimeout,setTimeout,AbortController,createAniListClient:()=>async()=>({media:[{id:154587,title:{romaji:'Sousou no Frieren'},coverImage:{extraLarge:'https://example.com/original.jpg'},startDate:{year:2023}}],hasNextPage:false}),selectedAnime,compareAlbumSongs,micromark:()=>'',console};
+  const context={document:{querySelector:key=>node(key),addEventListener(){}},window:{addEventListener(){}},location:{origin:'http://localhost'},URL,URLSearchParams,structuredClone,clearTimeout,setTimeout,AbortController,AbortSignal,animeFormatLabel,ANIME_FORMATS,withAnimeFormats,createAniListClient:()=>async()=>({media:[{id:154587,title:{romaji:'Sousou no Frieren'},coverImage:{extraLarge:'https://example.com/original.jpg'},startDate:{year:2023}}],hasNextPage:false}),selectedAnime,compareAlbumSongs,micromark:()=>'',console};
   const code=fs.readFileSync(new URL('../src/scripts/studio.mjs',import.meta.url),'utf8').replace(/^import .*;\r?\n/gm,'').replace(/\nboot\(\);\s*$/,'');
   context.normalize=normalize;
   context.mergeAlbumRows=mergeAlbumRows;

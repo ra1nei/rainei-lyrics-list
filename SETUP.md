@@ -31,7 +31,7 @@ Trong lần dọn repo, mã nguồn trước khi dọn được lưu ở `backup
 
 ## Quản lý nội dung
 
-- Tìm anime bằng tên, URL hoặc ID AniList ngay trong trang Quản lý. Tên và poster lấy từ AniList; tên tiếng Việt là nhãn nhập riêng.
+- Tìm anime bằng tên, URL hoặc ID AniList ngay trong trang Quản lý. Tên và poster lấy từ AniList; tên tiếng Việt là nhãn nhập riêng. Định dạng (TV, Movie, OVA, ONA…) mặc định lấy từ AniList; phim nhập cũ còn trống cũng được bổ sung khi tải thư viện/quản lý. Chỉ metadata thiếu mới được tra cứu, theo nhóm tối đa 50 ID và cache 5 phút. Định dạng đã chọn được giữ; kết quả tự điền được lưu vào Supabase khi lưu nháp/xuất bản phim.
 - Click thẻ anime để sửa thông tin hoặc mở tab Bài hát & lời. Bài hát mặc định thu gọn; tên, nghệ sĩ, loại bài và mùa/nhóm là bắt buộc. Thứ tự và URL video/poster được để trống.
 - Lưu nháp từng bài không làm đổi bản công khai. Bấm **Chọn** để chọn nhiều phim/bài hát rồi **Publish đã chọn**. Publish phim không tự publish các bài con; chỉ các bài được chọn được kiểm tra, lưu và publish.
 - Chuột phải vào thẻ anime hoặc bài hát trong quản lý để bật/tắt Công khai. Danh sách phim và bài hát chia sẵn thành hai nhóm **Đã xuất bản** (xanh pastel) và **Chưa xuất bản** (đỏ pastel), mặc định mở. Có thể thu gọn từng nhóm mà không làm mất nội dung đang sửa. Chọn tất cả chỉ chọn các mục trong nhóm đang mở. Nhóm căn cứ vào snapshot công khai, kể cả khi đã có sửa nháp mới.
