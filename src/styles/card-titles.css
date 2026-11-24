@@ -1,0 +1,26 @@
+body .card .card-title-line {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+}
+body .card-title-text {
+  display: inline-block;
+  width: max-content;
+  max-width: none;
+  vertical-align: top;
+}
+body .card-title-line[data-overflow] > .card-title-text {
+  animation: card-title-scroll var(--title-duration) linear infinite;
+}
+body .list-view .card > a > div:last-child { min-width: 0; flex: 1; }
+@keyframes card-title-scroll {
+  0%, 15% { transform: translateX(0); }
+  85%, 100% { transform: translateX(var(--title-travel)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  body .card-title-line[data-overflow] > .card-title-text { animation: none; }
+  body .card .card-title-line { overflow-x: auto; scrollbar-width: thin; }
+}

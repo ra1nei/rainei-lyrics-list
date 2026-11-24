@@ -13,6 +13,8 @@ import '../styles/publication.css';
 import '../styles/context-menu.css';
 import '../styles/toc.css';
 import '../styles/detail.css';
+import '../styles/card-titles.css';
+import './card-titles.mjs';
 
 const app = document.querySelector('#app');
 const main = document.querySelector('#main');
@@ -34,6 +36,7 @@ const button = (text, action, id = '', cls = '') => `<button type="button" class
 const field = (label, name, value = '', extra = '') => `<label class="field">${label}<input name="${name}" value="${esc(value)}" ${extra}/></label>`;
 const countSongs = id => published.filter(e => e.kind === 'song' && e.parent_id === id).length;
 const songCountHTML = count => `<span class="song-count"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13M9 9l12-2"/><ellipse cx="6" cy="18" rx="3" ry="3"/><ellipse cx="18" cy="16" rx="3" ry="3"/></svg><span>${count} bài hát</span></span>`;
+const cardTitlesHTML = data => `<h3 class="card-title-line" title="${esc(data.title)}"><span class="card-title-text">${esc(data.title)}</span></h3><p class="card-title-line" title="${esc(data.vietnamese||data.titles?.native||'')}"><span class="card-title-text">${esc(data.vietnamese||data.titles?.native||'')}</span></p>`;
 const songPublicationSummaryHTML = songs => {
   const publicIds = new Set(published.filter(e => e.kind === 'song').map(e => e.id));
   const live = songs.filter(song => publicIds.has(song.id)).length;
@@ -139,7 +142,7 @@ function filterLibrary() {
   let list = published.filter(e => e.kind === 'series');
   list = list.filter(e => normalize([e.data.title, e.data.vietnamese, ...Object.values(e.data.titles||{}), ...published.filter(s=>s.parent_id===e.id).flatMap(s=>[s.data.title,s.data.artist])].join(' ')).includes(q));
   list.sort((a,b) => a.data.title.localeCompare(b.data.title));
-  $('#library-grid').innerHTML = list.length ? list.map(e=>`<article class="card"><a href="${seriesHref(e.id)}"><div class="poster">${image(e.data.cover,e.data.title)}</div><div><h3 title="${esc(e.data.title)}">${esc(e.data.title)}</h3><p>${esc(e.data.vietnamese||e.data.titles?.native||'')}</p><div class="card-meta"><span>${esc(e.data.year||'—')}</span>${songCountHTML(countSongs(e.id))}${e.data.format&&e.data.format!=='ANIME'?'<span>·</span><span>'+esc(e.data.format)+'</span>':''}</div></div></a></article>`).join('') : '<div class="empty">Chưa có phim phù hợp. Thử đổi từ khoá.</div>';
+  $('#library-grid').innerHTML = list.length ? list.map(e=>`<article class="card"><a href="${seriesHref(e.id)}"><div class="poster">${image(e.data.cover,e.data.title)}</div><div>${cardTitlesHTML(e.data)}<div class="card-meta"><span>${esc(e.data.year||'—')}</span>${songCountHTML(countSongs(e.id))}${e.data.format&&e.data.format!=='ANIME'?'<span>·</span><span>'+esc(e.data.format)+'</span>':''}</div></div></a></article>`).join('') : '<div class="empty">Chưa có phim phù hợp. Thử đổi từ khoá.</div>';
 }
 function songAnchorBase(entry) {
   const tail=String(entry.id||'song').split('/').at(-1);
@@ -223,7 +226,7 @@ function renderAdmin(preserveSelection=false) {
   publishSelectionMode=false;selectedSongIds.clear();selectionSeriesId=null;
   current=null;dirty=false;albumSeriesId=null;albumRows=[];
   const list=drafts.filter(e=>e.kind==='series').sort((a,b)=>a.data.title.localeCompare(b.data.title));
-  shell(`<header class="admin-page-header"><h1>Quản lý phim</h1><details class="admin-options"><summary>Dữ liệu <span aria-hidden="true">⌄</span></summary><div class="admin-options-menu">${button('Nhập dữ liệu','import')}${button('Tải bản sao lưu','export')}</div></details></header>${animeSelectionToolbar()}${publicationFilterHTML('anime')}<div class="grid admin-anime-grid">${list.map(e=>{const s=status(e),songs=drafts.filter(song=>song.kind==='song'&&song.parent_id===e.id);return `<article class="card" data-anime-id="${esc(e.id)}"><span class="anime-select-control"><input type="checkbox" data-select-anime="${esc(e.id)}" aria-label="Chọn phim ${esc(e.data.title)}"/></span><button type="button" class="anime-entry-button" data-action="open-anime" data-id="${esc(e.id)}"><div class="poster">${image(e.data.cover,e.data.title)}</div><h3 title="${esc(e.data.title)}">${esc(e.data.title)}</h3><p>${esc(e.data.vietnamese||e.data.titles?.native||'')}</p><div class="card-meta"><span>${esc(e.data.year||'—')}</span></div>${songPublicationSummaryHTML(songs)}<div class="card-status"><span class="badge ${published.some(p=>p.id===e.id)?'live':'draft'}" title="${esc(s[1])}">${published.some(p=>p.id===e.id)?'Đã xuất bản':'Nháp'}</span></div></button></article>`;}).join('')||'<div class="panel empty">Chưa có anime. Gõ tên vào thanh tìm kiếm phía trên để thêm bộ đầu tiên.</div>'}<div id="anime-filter-empty" class="empty" hidden>Không có phim phù hợp với trạng thái này.</div></div>`);
+  shell(`<header class="admin-page-header"><h1>Quản lý phim</h1><details class="admin-options"><summary>Dữ liệu <span aria-hidden="true">⌄</span></summary><div class="admin-options-menu">${button('Nhập dữ liệu','import')}${button('Tải bản sao lưu','export')}</div></details></header>${animeSelectionToolbar()}${publicationFilterHTML('anime')}<div class="grid admin-anime-grid">${list.map(e=>{const s=status(e),songs=drafts.filter(song=>song.kind==='song'&&song.parent_id===e.id);return `<article class="card" data-anime-id="${esc(e.id)}"><span class="anime-select-control"><input type="checkbox" data-select-anime="${esc(e.id)}" aria-label="Chọn phim ${esc(e.data.title)}"/></span><button type="button" class="anime-entry-button" data-action="open-anime" data-id="${esc(e.id)}"><div class="poster">${image(e.data.cover,e.data.title)}</div>${cardTitlesHTML(e.data)}<div class="card-meta"><span>${esc(e.data.year||'—')}</span></div>${songPublicationSummaryHTML(songs)}<div class="card-status"><span class="badge ${published.some(p=>p.id===e.id)?'live':'draft'}" title="${esc(s[1])}">${published.some(p=>p.id===e.id)?'Đã xuất bản':'Nháp'}</span></div></button></article>`;}).join('')||'<div class="panel empty">Chưa có anime. Gõ tên vào thanh tìm kiếm phía trên để thêm bộ đầu tiên.</div>'}<div id="anime-filter-empty" class="empty" hidden>Không có phim phù hợp với trạng thái này.</div></div>`);
   main.querySelectorAll('[data-select-anime]').forEach(input=>input.addEventListener('change',()=>{
     if(input.checked)selectedAnimeIds.add(input.dataset.selectAnime);else selectedAnimeIds.delete(input.dataset.selectAnime);
     syncAnimeSelection();
