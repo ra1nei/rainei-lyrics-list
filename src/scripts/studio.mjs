@@ -47,7 +47,7 @@ let store, published = [], drafts = [], current = null, dirty = false, actionPen
 let albumSeriesId = null, albumRows = [];
 let publishSelectionMode = false, selectionSeriesId = null, selectedSongIds = new Set();
 let animeSelectionMode = false, selectedAnimeIds = new Set();
-let animePublicationFilter = 'all', songPublicationFilter = 'all';
+const openPublicationGroups = { anime: new Set(['published','draft']), song: new Set(['published','draft']) };
 let contextReturnFocus = null;
 let filterKind = 'series', viewMode = 'grid', currentMedia = [], searchPage = 1, searchTerm = '', searchController, searchTimer, searchVersion = 0, routeVersion = 0;
 let renderedRouteKey = '';
@@ -206,27 +206,37 @@ async function loadAdmin() {
   drafts=await store.listDrafts();
   renderAdmin();
 }
-function visibleAnimeEntries() { return filterByPublication(drafts.filter(e=>e.kind==='series'),published,animePublicationFilter); }
-function visibleSongEntries() { return filterByPublication(albumRows,published,songPublicationFilter); }
-function publicationFilterHTML(scope) {
-  const value=scope==='anime'?animePublicationFilter:songPublicationFilter;
-  return `<div class="publication-filter-row"><div class="publication-filter" role="group" aria-label="Lọc trạng thái xuất bản">${[['all','Tất cả'],['published','Đã xuất bản'],['draft','Chưa xuất bản']].map(([id,label])=>`<button type="button" class="publication-filter-btn ${value===id?'active':''}" data-action="filter-${scope}" data-id="${id}" aria-pressed="${value===id}">${label}</button>`).join('')}</div><span id="${scope}-filter-count" class="count-label"></span></div>`;
+function visiblePublicationEntries(entries, scope) {
+  const ids = new Set(published.map(entry => entry.id));
+  return entries.filter(entry => openPublicationGroups[scope].has(ids.has(entry.id) ? 'published' : 'draft'));
 }
-function applyPublicationFilter(scope) {
-  const isAnime=scope==='anime',entries=isAnime?drafts.filter(e=>e.kind==='series'):albumRows;
-  const visible=isAnime?visibleAnimeEntries():visibleSongEntries(),ids=new Set(visible.map(e=>e.id));
-  const value=isAnime?animePublicationFilter:songPublicationFilter;
-  main.querySelectorAll(isAnime?'[data-anime-id]':'[data-song-id]').forEach(block=>block.hidden=!ids.has(isAnime?block.dataset.animeId:block.dataset.songId));
-  main.querySelectorAll(`[data-action="filter-${scope}"]`).forEach(button=>{button.classList.toggle('active',button.dataset.id===value);button.setAttribute('aria-pressed',String(button.dataset.id===value));});
-  const counter=$(`#${scope}-filter-count`);if(counter)counter.textContent=`${visible.length}/${entries.length} ${isAnime?'phim':'bài hát'}`;
-  const empty=$(`#${scope}-filter-empty`);if(empty)empty.hidden=visible.length>0||entries.length===0;
+function visibleAnimeEntries() { return visiblePublicationEntries(drafts.filter(e=>e.kind==='series'),'anime'); }
+function visibleSongEntries() { return visiblePublicationEntries(albumRows,'song'); }
+function publicationGroupsHTML(scope, entries, renderEntry, listClass) {
+  return ['published','draft'].map(state => {
+    const rows = filterByPublication(entries,published,state);
+    const label = state==='published' ? 'Đã xuất bản' : 'Chưa xuất bản';
+    return `<details class="publication-group publication-${state}" data-publication-scope="${scope}" data-publication-state="${state}" ${openPublicationGroups[scope].has(state)?'open':''}><summary class="publication-group-heading"><span>${label}</span><span class="publication-group-count">${rows.length} ${scope==='anime'?'phim':'bài hát'}</span><span class="publication-group-chevron" aria-hidden="true">⌄</span></summary><div class="${listClass}">${rows.map(renderEntry).join('')||'<p class="empty">Chưa có '+(scope==='anime'?'phim':'bài hát')+' trong nhóm này.</p>'}</div></details>`;
+  }).join('');
+}
+function bindPublicationGroups(scope) {
+  main.querySelectorAll(`[data-publication-scope="${scope}"]`).forEach(group => group.addEventListener('toggle',()=>{
+    const state=group.dataset.publicationState;
+    if(group.open)openPublicationGroups[scope].add(state);else openPublicationGroups[scope].delete(state);
+    if(scope==='anime')syncAnimeSelection();else syncPublishSelection();
+  }));
+}
+function animeCardHTML(e) {
+  const s=status(e),songs=drafts.filter(song=>song.kind==='song'&&song.parent_id===e.id);
+  return `<article class="card" data-anime-id="${esc(e.id)}"><span class="anime-select-control"><input type="checkbox" data-select-anime="${esc(e.id)}" aria-label="Chọn phim ${esc(e.data.title)}"/></span><button type="button" class="anime-entry-button" data-action="open-anime" data-id="${esc(e.id)}"><div class="poster">${image(e.data.cover,e.data.title)}</div>${cardTitlesHTML(e.data)}<div class="card-meta"><span>${esc(e.data.year||'—')}</span></div>${songPublicationSummaryHTML(songs)}<div class="card-status"><span class="badge ${published.some(p=>p.id===e.id)?'live':'draft'}" title="${esc(s[1])}">${published.some(p=>p.id===e.id)?'Đã xuất bản':'Nháp'}</span></div></button></article>`;
 }
 function renderAdmin(preserveSelection=false) {
   if(!preserveSelection){animeSelectionMode=false;selectedAnimeIds.clear();}
   publishSelectionMode=false;selectedSongIds.clear();selectionSeriesId=null;
   current=null;dirty=false;albumSeriesId=null;albumRows=[];
   const list=drafts.filter(e=>e.kind==='series').sort((a,b)=>a.data.title.localeCompare(b.data.title));
-  shell(`<header class="admin-page-header"><h1>Quản lý phim</h1><details class="admin-options"><summary>Dữ liệu <span aria-hidden="true">⌄</span></summary><div class="admin-options-menu">${button('Nhập dữ liệu','import')}${button('Tải bản sao lưu','export')}</div></details></header>${animeSelectionToolbar()}${publicationFilterHTML('anime')}<div class="grid admin-anime-grid">${list.map(e=>{const s=status(e),songs=drafts.filter(song=>song.kind==='song'&&song.parent_id===e.id);return `<article class="card" data-anime-id="${esc(e.id)}"><span class="anime-select-control"><input type="checkbox" data-select-anime="${esc(e.id)}" aria-label="Chọn phim ${esc(e.data.title)}"/></span><button type="button" class="anime-entry-button" data-action="open-anime" data-id="${esc(e.id)}"><div class="poster">${image(e.data.cover,e.data.title)}</div>${cardTitlesHTML(e.data)}<div class="card-meta"><span>${esc(e.data.year||'—')}</span></div>${songPublicationSummaryHTML(songs)}<div class="card-status"><span class="badge ${published.some(p=>p.id===e.id)?'live':'draft'}" title="${esc(s[1])}">${published.some(p=>p.id===e.id)?'Đã xuất bản':'Nháp'}</span></div></button></article>`;}).join('')||'<div class="panel empty">Chưa có anime. Gõ tên vào thanh tìm kiếm phía trên để thêm bộ đầu tiên.</div>'}<div id="anime-filter-empty" class="empty" hidden>Không có phim phù hợp với trạng thái này.</div></div>`);
+  shell(`<header class="admin-page-header"><h1>Quản lý phim</h1><details class="admin-options"><summary>Dữ liệu <span aria-hidden="true">⌄</span></summary><div class="admin-options-menu">${button('Nhập dữ liệu','import')}${button('Tải bản sao lưu','export')}</div></details></header>${animeSelectionToolbar()}${publicationGroupsHTML('anime',list,animeCardHTML,'grid admin-anime-grid')}`);
+  bindPublicationGroups('anime');
   main.querySelectorAll('[data-select-anime]').forEach(input=>input.addEventListener('change',()=>{
     if(input.checked)selectedAnimeIds.add(input.dataset.selectAnime);else selectedAnimeIds.delete(input.dataset.selectAnime);
     syncAnimeSelection();
@@ -238,10 +248,9 @@ function animeSelectionToolbar() {
   return `<div class="anime-bulk-actions"><div class="anime-selection-idle"><h2>Danh sách phim <span class="count-label">(${count})</span></h2>${button('Chọn','anime-select-start','','small')}</div><div class="anime-selection-tools"><span id="anime-selection-count" class="selection-count">0 phim đã chọn</span><div class="selection-options">${button('Chọn tất cả','anime-select-all','','small')}${button('Huỷ','anime-select-cancel','','small')}</div>${button('Xuất bản','anime-publish-selected','','primary')}</div></div>`;
 }
 function syncAnimeSelection() {
-  applyPublicationFilter('anime');
   const valid=new Set(visibleAnimeEntries().map(e=>e.id));
   for(const id of selectedAnimeIds)if(!valid.has(id))selectedAnimeIds.delete(id);
-  $('.admin-anime-grid').classList.toggle('anime-selecting',animeSelectionMode);
+  main.querySelectorAll('.admin-anime-grid').forEach(grid=>grid.classList.toggle('anime-selecting',animeSelectionMode));
   $('.anime-bulk-actions').classList.toggle('selecting',animeSelectionMode);
   main.querySelectorAll('[data-select-anime]').forEach(input=>input.checked=selectedAnimeIds.has(input.dataset.selectAnime));
   main.querySelectorAll('[data-anime-id]').forEach(card=>card.classList.toggle('anime-selected',selectedAnimeIds.has(card.dataset.animeId)));
@@ -293,12 +302,13 @@ function revealSong(id) {
   return block;
 }
 function renderAlbum(entry, rows, openIds=new Set()) {
-  if(selectionSeriesId!==entry.id){publishSelectionMode=false;selectedSongIds.clear();selectionSeriesId=entry.id;songPublicationFilter='all';}
+  if(selectionSeriesId!==entry.id){publishSelectionMode=false;selectedSongIds.clear();selectionSeriesId=entry.id;openPublicationGroups.song=new Set(['published','draft']);}
   current=structuredClone(entry);albumSeriesId=entry.id;
   albumRows=structuredClone(rows||drafts.filter(e=>e.kind==='song'&&e.parent_id===entry.id).sort(compareAlbumSongs));
   dirty=Boolean(rows);
   const parentPublished=published.some(e=>e.id===entry.id&&e.kind==='series');
-  shell(animeTabs(entry,'songs')+`<div class="section-head"><div><h2>Bài hát & lời</h2><p class="muted">Chọn một bài để mở chỉnh sửa.</p></div>${button('+ Thêm bài hát','album-add',entry.id,'primary')}</div><form id="album-form" novalidate><div class="album-savebar"><span id="album-save-state" role="status">${rows?'Có thay đổi chưa lưu':albumRows.length+' bài hát'}</span>${publishSelectionToolbar(parentPublished&&albumRows.length)}</div>${publicationFilterHTML('song')}${!parentPublished?'<p class="publication-hint muted">Anime chưa công khai. Các bài vẫn lưu nháp được; xuất bản anime trước để công khai bài hát.</p>':''}<div class="album-song-list">${albumRows.map((song,index)=>songEditorHTML(song,index,openIds.has(song.id))).join('')||'<div class="panel empty">Chưa có bài hát.</div>'}<div id="song-filter-empty" class="panel empty" hidden>Không có bài hát phù hợp với trạng thái này.</div></div></form>`);
+  shell(animeTabs(entry,'songs')+`<div class="section-head"><div><h2>Bài hát & lời</h2><p class="muted">Chọn một bài để mở chỉnh sửa.</p></div>${button('+ Thêm bài hát','album-add',entry.id,'primary')}</div><form id="album-form" novalidate><div class="album-savebar"><span id="album-save-state" role="status">${rows?'Có thay đổi chưa lưu':albumRows.length+' bài hát'}</span>${publishSelectionToolbar(parentPublished&&albumRows.length)}</div>${!parentPublished?'<p class="publication-hint muted">Anime chưa công khai. Các bài vẫn lưu nháp được; xuất bản anime trước để công khai bài hát.</p>':''}${publicationGroupsHTML('song',albumRows,song=>songEditorHTML(song,albumRows.indexOf(song),openIds.has(song.id)),'album-song-list')}</form>`);
+  bindPublicationGroups('song');
   $('#album-form').addEventListener('input',e=>{
     if(e.target.matches('[data-select-song]'))return;
     dirty=true;$('#album-save-state').textContent='Có thay đổi chưa lưu';
@@ -318,7 +328,6 @@ function publishSelectionToolbar(enabled) {
   return `<div class="batch-publish-actions">${button('Chọn','batch-start','','small batch-start')}<div class="batch-selection-tools"><span id="batch-selection-count" class="selection-count">0 bài đã chọn</span><div class="selection-options">${button('Chọn tất cả','batch-select-all','','small')}${button('Huỷ','batch-cancel','','small')}</div>${enabled?button('Xuất bản','album-publish-selected','','primary'):'<button type="button" class="btn primary" disabled title="Công khai phim trước để xuất bản bài hát">Xuất bản</button>'}</div></div>`;
 }
 function syncPublishSelection() {
-  applyPublicationFilter('song');
   const ids=new Set(visibleSongEntries().map(e=>e.id));
   for(const id of selectedSongIds)if(!ids.has(id))selectedSongIds.delete(id);
   $('#album-form').classList.toggle('batch-selecting',publishSelectionMode);
@@ -385,8 +394,6 @@ async function saveCurrent() {
 }
 function downloadJSON(value,name) {const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 async function handleAction(action,id) {
-  if(action==='filter-anime'){animePublicationFilter=id;selectedAnimeIds.clear();syncAnimeSelection();return;}
-  if(action==='filter-song'){songPublicationFilter=id;selectedSongIds.clear();syncPublishSelection();return;}
   if(action==='anime-select-start'){animeSelectionMode=true;syncAnimeSelection();return;}
   if(action==='anime-select-all'){const all=visibleAnimeEntries();if(selectedAnimeIds.size===all.length)selectedAnimeIds.clear();else all.forEach(e=>selectedAnimeIds.add(e.id));syncAnimeSelection();return;}
   if(action==='anime-select-clear'){selectedAnimeIds.clear();syncAnimeSelection();return;}

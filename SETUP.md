@@ -34,7 +34,7 @@ Trong lần dọn repo, mã nguồn trước khi dọn được lưu ở `backup
 - Tìm anime bằng tên, URL hoặc ID AniList ngay trong trang Quản lý. Tên và poster lấy từ AniList; tên tiếng Việt là nhãn nhập riêng.
 - Click thẻ anime để sửa thông tin hoặc mở tab Bài hát & lời. Bài hát mặc định thu gọn; tên, nghệ sĩ, loại bài và mùa/nhóm là bắt buộc. Thứ tự và URL video/poster được để trống.
 - Lưu nháp từng bài không làm đổi bản công khai. Bấm **Chọn** để chọn nhiều phim/bài hát rồi **Publish đã chọn**. Publish phim không tự publish các bài con; chỉ các bài được chọn được kiểm tra, lưu và publish.
-- Chuột phải vào thẻ anime hoặc bài hát trong quản lý để bật/tắt Công khai. Bộ lọc **Tất cả / Đã xuất bản / Chưa xuất bản** căn cứ vào snapshot công khai, kể cả khi đã có sửa nháp mới.
+- Chuột phải vào thẻ anime hoặc bài hát trong quản lý để bật/tắt Công khai. Danh sách phim và bài hát chia sẵn thành hai nhóm **Đã xuất bản** (xanh pastel) và **Chưa xuất bản** (đỏ pastel), mặc định mở. Có thể thu gọn từng nhóm mà không làm mất nội dung đang sửa. Chọn tất cả chỉ chọn các mục trong nhóm đang mở. Nhóm căn cứ vào snapshot công khai, kể cả khi đã có sửa nháp mới.
 - Menu Dữ liệu cho phép xuất JSON sao lưu và nhập JSON. Xoá phim/bài hát là xoá vĩnh viễn sau hộp xác nhận; chưa có thùng rác.
 - Lời hiển thị bằng Markdown an toàn, không thực thi HTML/MDX. Nội dung tải bằng JavaScript; khách thấy thay đổi sau khi tải lại trang.
 

@@ -20,7 +20,7 @@ body .anime-selecting .anime-entry-button { cursor: pointer; }
 }
 body details.song-editor { padding: 0; overflow: hidden; border: 1px solid; border-left-width: 4px; border-radius: 12px; }
 body details.song-editor.song-published { background: linear-gradient(110deg, #24463f, #1b3036); border-color: #78b9a575; }
-body details.song-editor.song-unpublished { background: linear-gradient(110deg, #46372e, #2c2b35); border-color: #e0ad797a; }
+body details.song-editor.song-unpublished { background: linear-gradient(110deg, #462f3d, #2e2939); border-color: #dfa0ad7a; }
 body .song-summary { display: flex; align-items: center; gap: 15px; padding: 18px 20px; cursor: pointer; list-style: none; }
 body .song-summary::-webkit-details-marker { display: none; }
 body .song-summary:hover { background: #ffffff07; }
@@ -28,12 +28,12 @@ body .song-summary:focus-visible { outline: 2px solid var(--accent); outline-off
 body .song-summary-index { width: 29px; height: 29px; border-radius: 8px; display: grid; place-items: center; flex-shrink: 0; font-size: 12px; background: #ffcb9a1c; color: #ffdbb4; }
 body .song-published .song-summary-index { background: #98d9bc20; color: #b7f0d5; }
 body .song-summary-info { min-width: 0; flex: 1; }
-body .song-summary-title { display: block; font-size: 14px; overflow-wrap: anywhere; color: #ffe1c3; }
+body .song-summary-title { display: block; font-size: 14px; overflow-wrap: anywhere; color: #f5c7d0; }
 body .song-published .song-summary-title { color: #c1f2df; }
 body .song-summary-info small { display: block; margin-top: 7px; color: #c1b3ac; font-size: 11px; }
 body .song-published .song-summary-info small { color: #aac9c1; }
 body .song-summary-status { text-align: right; flex-shrink: 0; }
-body .song-summary-status .badge.draft { color: #ffe0b7; background: #80563280; }
+body .song-summary-status .badge.draft { color: #f5c7d0; background: #80536380; }
 body .song-summary-status .badge.live { color: #c4f5dc; background: #48756380; }
 body .song-edit-state { display: block; margin-top: 5px; font-size: 10px; color: #d6cfbe; }
 body .song-chevron { font-size: 20px; color: #c2b8a9; transition: transform .15s; }

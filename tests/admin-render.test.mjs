@@ -46,8 +46,8 @@ test('Song tab contains every song and lyrics in collapsed panels by default',()
   assert.equal((main.innerHTML.match(/<textarea /g)||[]).length,2);
   assert.match(main.innerHTML,/First lyrics\nSecond line/);assert.match(main.innerHTML,/&lt;script&gt;unsafe&lt;\/script&gt;/);
   assert.doesNotMatch(main.innerHTML,/Private other anime|Unrelated song/);assert.match(main.innerHTML,/data-action="batch-start"/);assert.match(main.innerHTML,/id="anilist-search"/);
-  assert.equal((main.innerHTML.match(/<details /g)||[]).length,2);
-  assert.doesNotMatch(main.innerHTML,/<details[^>]*\sopen(?:\s|>)/);
+  assert.equal((main.innerHTML.match(/<details class="panel song-editor/g)||[]).length,2);
+  assert.doesNotMatch(main.innerHTML,/<details class="panel song-editor[^>]*\sopen(?:\s|>)/);
   assert.doesNotMatch(main.innerHTML,/Lưu tất cả bản nháp/);
 });
 test('Inline AniList suggestions appear under the search without replacing the anime overview',async()=>{
@@ -76,7 +76,7 @@ test('Song form requires the first four fields and allows blank order and relati
   for(const field of ['order','video','poster'])assert.doesNotMatch(main.innerHTML,new RegExp('name="'+field+'"[^>]*required'));
   assert.match(main.innerHTML,/name="poster"[^>]*type="text"/);assert.match(main.innerHTML,/name="order" value=""/);
 });
-test('Published and unpublished songs have distinct green and orange status classes',()=>{
+test('Published and unpublished songs have distinct publication status classes',()=>{
   const {context,main}=harness();vm.runInContext('published=[entries[0],entries[1]];renderAlbum(entries[0])',context);
   assert.match(main.innerHTML,/song-published" data-song-id="s1"/);assert.match(main.innerHTML,/song-unpublished" data-song-id="s2"/);
 });
@@ -120,17 +120,30 @@ test('Anime selection uses Choose mode and select-all excludes song entries',asy
 test('Anime status is below the year and song count in its own row',()=>{
   const {context,main}=harness();vm.runInContext('renderAdmin()',context);
   assert.match(main.innerHTML,/class="card-meta">[\s\S]*?class="song-publication-summary"[\s\S]*?<\/div><div class="card-status">/);
-  assert.match(main.innerHTML,/data-action="filter-anime"/);
+  assert.match(main.innerHTML,/data-publication-scope="anime" data-publication-state="published" open/);
+  assert.match(main.innerHTML,/data-publication-scope="anime" data-publication-state="draft" open/);
+  assert.doesNotMatch(main.innerHTML,/data-action="filter-anime"/);
 });
-test('Filtering songs keeps editor markup intact and select-all only selects matching songs',async()=>{
-  const {context,main,node}=harness();vm.runInContext('published=[entries[0],entries[1]];renderAlbum(entries[0]);',context);
+test('Publication sections contain each entry once and classify revised public items as published',()=>{
+  const {context,main}=harness();
+  context.another={id:'draft-anime',kind:'series',data:{title:'Private anime'}};
+  vm.runInContext('drafts=[...entries,another];published=[{...entries[0],data:{title:"Old public title"}}];renderAdmin()',context);
+  assert.equal((main.innerHTML.match(/data-anime-id="anime"/g)||[]).length,1);
+  assert.equal((main.innerHTML.match(/data-anime-id="draft-anime"/g)||[]).length,1);
+  const [liveSection,draftSection]=main.innerHTML.split('data-publication-state="published"')[1].split('data-publication-state="draft"');
+  assert.match(liveSection,/data-anime-id="anime"/);
+  assert.doesNotMatch(liveSection,/data-anime-id="draft-anime"/);
+  assert.match(draftSection,/data-anime-id="draft-anime"/);
+});
+
+test('Collapsing a song publication group keeps unsaved forms and limits bulk selection to open groups',async()=>{
+  const {context,main}=harness();vm.runInContext('published=[entries[0],entries[1]];renderAlbum(entries[0]);',context);
   const original=main.innerHTML;
-  await vm.runInContext('handleAction("filter-song","draft")',context);
-  assert.equal(main.innerHTML,original);
-  assert.equal(node('#song-filter-count').textContent,'1/2 bài hát');
+  vm.runInContext('openPublicationGroups.song.delete("published");syncPublishSelection()',context);
   await vm.runInContext('handleAction("batch-start");handleAction("batch-select-all")',context);
   assert.deepEqual([...vm.runInContext('selectedSongIds',context)],['s2']);
-  await vm.runInContext('handleAction("filter-song","published")',context);
+  assert.equal(main.innerHTML,original);
+  vm.runInContext('openPublicationGroups.song.delete("draft");openPublicationGroups.song.add("published");syncPublishSelection()',context);
   assert.equal(vm.runInContext('selectedSongIds.size',context),0);
   await vm.runInContext('handleAction("batch-select-all")',context);
   assert.deepEqual([...vm.runInContext('selectedSongIds',context)],['s1']);
