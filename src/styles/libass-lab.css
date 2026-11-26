@@ -9,42 +9,40 @@ body .lab-search-row .search { min-width: 0; }
 body .lab-status { min-height: 1.5em; margin: 12px 0 0; font-size: 12px; }
 body .kara-results { display: grid; gap: 8px; margin-top: 14px; }
 body .kara-result { display: grid; grid-template-columns: 58px minmax(0,1fr) auto; align-items: center; gap: 14px; width: 100%; padding: 10px 13px; color: inherit; text-align: left; border: 1px solid var(--line); border-radius: 10px; background: #101a2b; }
-body .kara-result:hover, body .kara-result:focus-visible { border-color: #a697fa; background: #1d2940; }
-body .kara-result-cover { display: block; width: 58px; height: 78px; object-fit: cover; border-radius: 7px; background: linear-gradient(145deg,#333453,#202b43 62%,#284c55); }
-body .kara-result-cover-empty { display: grid; place-items: center; color: #c2baff; font-size: 23px; }
+body .kara-result:hover, body .kara-result:focus-visible { border-color: var(--accent); background: #192a2a; }
+body .kara-result-cover { display: block; width: 58px; height: 78px; object-fit: cover; border-radius: 7px; background: linear-gradient(145deg,#243042,#131b28 62%,#23352f); }
+body .kara-result-cover-empty { display: grid; place-items: center; color: var(--accent); font-size: 23px; }
 body .kara-result strong, body .kara-result small { display: block; }
 body .kara-result strong { overflow-wrap: anywhere; }
 body .kara-result small { margin-top: 5px; color: var(--muted); line-height: 1.5; }
-body .kara-media-kind { flex-shrink: 0; padding: 5px 8px; border-radius: 6px; color: #c4f5dc; background: #254339; font-size: 11px; }
+body .kara-media-kind { flex-shrink: 0; padding: 5px 8px; border-radius: 6px; color: var(--accent); background: #183a30; font-size: 11px; }
 body .player-panel { overflow: hidden; }
-body .player-shell { overflow: hidden; border: 1px solid #424b70; border-radius: 11px; background: #080c15; }
+body .player-shell { overflow: hidden; border: 1px solid var(--line); border-radius: 11px; background: #0b1019; }
 body .player-shell .player-stage { border: 0; border-radius: 0; }
 body .player-stage canvas { pointer-events: none; }
-body .player-controls { display: flex; align-items: center; gap: 9px; min-height: 52px; padding: 8px 11px; border-top: 1px solid #29344d; background: #111a2b; }
-body .player-controls .btn { flex-shrink: 0; }
-body .player-time { min-width: 38px; color: #b9c4df; font: 11px ui-monospace, Consolas, monospace; text-align: center; }
-body .seek-bar { min-width: 40px; flex: 1; accent-color: #a99aff; }
-body .volume-bar { width: 75px; accent-color: #a99aff; }
-body .player-shell:fullscreen { display: flex; flex-direction: column; width: 100vw; height: 100vh; border: 0; border-radius: 0; background: #05070c; }
+body .player-controls { display: flex; align-items: center; gap: 9px; min-height: 46px; padding: 4px 11px; border-top: 1px solid var(--line); background: #0b1019; }
+body .player-controls .btn { flex-shrink: 0; padding: 7px 9px; border-color: transparent; background: transparent; box-shadow: none; color: var(--muted); }
+body .player-controls .btn:hover, body .player-controls .btn:focus-visible { border-color: transparent; background: #ffffff0a; color: var(--accent); }
+body .player-time { min-width: 38px; color: var(--muted); font: 11px var(--app-font), monospace; text-align: center; }
+body .seek-bar { min-width: 40px; flex: 1; }
+body .seek-bar, body .volume-bar { accent-color: var(--accent); }
+body .volume-bar { width: 75px; }
+body .player-shell:fullscreen { display: flex; flex-direction: column; width: 100vw; height: 100vh; border: 0; border-radius: 0; background: #0b1019; }
 body .player-shell:fullscreen .player-stage { display: flex; flex: 1; min-height: 0; align-items: center; justify-content: center; }
 body .player-shell:fullscreen .player-stage video { width: 100%; height: 100%; max-height: none; object-fit: contain; }
 body .player-shell:fullscreen .player-controls { flex-shrink: 0; padding: 12px 18px; }
 body .player-panel > .section-head { align-items: center; }
-body .player-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(320px, .9fr); gap: 24px; }
+body .player-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 body .player-column, body .ass-column { min-width: 0; }
-body .player-stage { position: relative; display: grid; place-items: center; width: 100%; min-height: 270px; overflow: hidden; border: 1px solid #424b70; border-radius: 11px; background: #080c15; }
-body .player-stage video { display: block; width: 100%; max-height: min(62vh, 650px); object-fit: contain; background: #080c15; }
+body .player-stage { position: relative; display: grid; place-items: center; width: 100%; min-height: 270px; overflow: hidden; border: 1px solid var(--line); border-radius: 11px; background: #0b1019; }
+body .player-stage video { display: block; width: 100%; max-height: min(62vh, 650px); object-fit: contain; background: #0b1019; }
 body .player-stage canvas { z-index: 2; }
-body .player-empty { max-width: 340px; padding: 20px; color: #aab4ce; text-align: center; font-size: 13px; line-height: 1.7; }
-body .ass-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; margin-top: 10px; }
+body .player-empty { max-width: 340px; padding: 20px; color: var(--muted); text-align: center; font-size: 13px; line-height: 1.7; }
+body .ass-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
 body .file-button { cursor: pointer; }
 body .small-link { font-size: 12px; }
-body .media-note, body .ass-note { margin: 10px 0 0; font-size: 11px; line-height: 1.6; }
-body .ass-toolbar { margin: 0 0 14px; }
-body .ass-editor-label { display: block; }
-body .ass-editor { display: block; min-height: 420px; height: min(57vh, 680px); margin-top: 8px; resize: vertical; font: 12px/1.55 ui-monospace, Consolas, monospace; tab-size: 2; white-space: pre; }
-body .lab-footnote { margin: 0; color: #9ea8c1; font-size: 11px; line-height: 1.6; }
-body #lab-notice { position: fixed; z-index: 100; right: 24px; bottom: 24px; max-width: min(520px, calc(100vw - 32px)); padding: 13px 17px; border: 1px solid #6b77a5; border-radius: 10px; color: #e8edff; background: #202d47; box-shadow: 0 12px 35px #0008; font-size: 13px; }
-body #lab-notice.error { border-color: #a65d75; color: #ffe1e8; background: #512c3a; }
-@media(max-width: 900px) { body .player-grid { grid-template-columns: 1fr; } body .ass-editor { min-height: 320px; height: 48vh; } }
-@media(max-width: 600px) { body .lab-search-row { align-items: stretch; flex-direction: column; } body .lab-search-row .btn { width: 100%; } body .kara-result { grid-template-columns: 48px minmax(0,1fr); gap: 10px; padding: 9px; } body .kara-result-cover { width: 48px; height: 66px; grid-row: span 2; } body .kara-media-kind { grid-column: 2; justify-self: start; } body .player-stage { min-height: 200px; } body .player-stage video { max-height: 42vh; } body .player-controls { gap: 6px; padding: 7px; } body .volume-bar { display: none; } body .player-controls .btn { padding: 8px; } body .player-controls #fullscreen-toggle { font-size: 0; } body .player-controls #fullscreen-toggle:first-letter { font-size: 14px; } body .ass-editor { min-height: 280px; } body .player-panel { padding: 14px; } }
+body .lab-footnote { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+body #lab-notice { position: fixed; z-index: 100; right: 24px; bottom: 24px; max-width: min(520px, calc(100vw - 32px)); padding: 13px 17px; border: 1px solid var(--accent); border-radius: 10px; color: #102c24; background: #d0f5e8; box-shadow: 0 12px 35px #0008; font-size: 13px; }
+body #lab-notice.error { border-color: #693541; color: #ffe0e3; background: #5c2832; }
+@media(max-width: 900px) { body .player-grid { grid-template-columns: 1fr; } }
+@media(max-width: 600px) { body .lab-search-row { align-items: stretch; flex-direction: column; } body .lab-search-row .btn { width: 100%; } body .kara-result { grid-template-columns: 48px minmax(0,1fr); gap: 10px; padding: 9px; } body .kara-result-cover { width: 48px; height: 66px; grid-row: span 2; } body .kara-media-kind { grid-column: 2; justify-self: start; } body .player-stage { min-height: 200px; } body .player-stage video { max-height: 42vh; } body .player-controls { gap: 6px; padding: 4px 7px; } body .volume-bar { display: none; } body .player-controls .btn { padding: 6px; } body .player-panel { padding: 14px; } }

@@ -16,13 +16,11 @@ const results = $('#kara-results');
 const searchStatus = $('#search-status');
 const video = $('#kara-video');
 const playerShell = $('#player-shell');
-const editor = $('#ass-editor');
 const renderStatus = $('#render-status');
 const notice = $('#lab-notice');
 const base = $('#app').dataset.base;
 let engine = null;
 let activeTrack = '';
-let updateTimer = 0;
 let noticeTimer = 0;
 let sourceVersion = 0;
 
@@ -259,8 +257,7 @@ function currentFrame() {
 }
 
 async function renderTrack({ recreate = false } = {}) {
-  const track = editor.value;
-  activeTrack = track;
+  const track = activeTrack;
   if (!track.trim()) {
     await destroyEngine();
     setRenderMessage('Chưa có nội dung ASS', true);
@@ -336,13 +333,14 @@ async function selectKara(kid) {
   searchStatus.textContent = 'Đang lấy thông tin bài hát…';
   try {
     const kara = await jsonRequest(`${API}/karas/${encodeURIComponent(kid)}`);
+    activeTrack = '';
     if (kara.mediafile && mediaKind(kara.mediafile) === 'video') {
       const url = mediaURL(kara.mediafile);
       loadMedia(url);
     } else {
       loadMedia('');
       setRenderMessage('Bài này không có video', true);
-      setNotice('Bài được chọn chỉ có âm thanh. Nạp video từ máy hoặc tìm bài có file video để xem ASS overlay.');
+      setNotice('Bài được chọn chỉ có âm thanh. Hãy tìm một bài có video để xem phụ đề.');
     }
 
     const lyricFilename = kara.lyrics_infos?.find(lyrics => lyrics.default)?.filename || kara.lyrics_infos?.[0]?.filename || kara.subfile;
@@ -355,13 +353,10 @@ async function selectKara(kid) {
 
     const generated = lyricsToAss(kara.lyrics);
     if (generated) {
-      editor.value = generated;
-      $('#ass-note').textContent = 'Đang hiển thị bản xem trước được dựng từ lyric/timing của API. Nạp ASS gốc để kiểm tra chính xác style, effect, positioning và các dòng trong file của bạn.';
       activeTrack = generated;
     } else {
-      editor.value = '';
       activeTrack = '';
-      $('#ass-note').textContent = 'API không trả timing lyric cho bài này. Tải ASS gốc hoặc nạp file ASS cục bộ để render.';
+      if (video.videoWidth) setRenderMessage('Nạp file ASS để bật phụ đề', true);
     }
     searchStatus.textContent = `Đã chọn ${resultTitle(kara)} · KID ${kara.kid}`;
   } catch (error) {
@@ -372,17 +367,9 @@ async function selectKara(kid) {
 $('#ass-file').addEventListener('change', async event => {
   const file = event.target.files?.[0];
   if (!file) return;
-  editor.value = await file.text();
-  $('#ass-note').textContent = `Đang sửa file cục bộ: ${file.name}. Nội dung chỉ nằm trong trình duyệt.`;
-  activeTrack = editor.value;
+  activeTrack = await file.text();
   await renderTrack({ recreate: true });
   event.target.value = '';
-});
-
-editor.addEventListener('input', () => {
-  setRenderMessage('Có thay đổi · đang render…');
-  clearTimeout(updateTimer);
-  updateTimer = setTimeout(() => { void renderTrack(); }, 180);
 });
 
 video.addEventListener('seeked', () => {
@@ -437,7 +424,10 @@ $('#fullscreen-toggle').addEventListener('click', async () => {
   }
 });
 document.addEventListener('fullscreenchange', () => {
-  $('#fullscreen-toggle').textContent = document.fullscreenElement ? '⤢ Thu nhỏ' : '⛶ Toàn màn hình';
+  const fullscreen = Boolean(document.fullscreenElement);
+  $('#fullscreen-toggle').textContent = fullscreen ? '⤢' : '⛶';
+  $('#fullscreen-toggle').setAttribute('aria-label', fullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình');
+  $('#fullscreen-toggle').title = fullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình';
 });
 window.addEventListener('pagehide', () => {
   void destroyEngine();

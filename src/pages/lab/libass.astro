@@ -1,5 +1,6 @@
 ---
 import '../../styles/studio.css';
+import '../../styles/font.css';
 import '../../styles/libass-lab.css';
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
@@ -21,8 +22,8 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
       <main class="libass-page">
         <section class="lab-intro">
           <p class="eyebrow">Prototype · kara.moe API + JASSUB/libass</p>
-          <h1>Sửa phụ đề, xem ngay</h1>
-          <p class="muted">Tìm bài trên kara.moe để lấy media gốc, rồi nạp hoặc sửa file ASS. Phụ đề được render trong trình duyệt khi video đang phát, không cần encode lại.</p>
+          <h1>Xem phụ đề trực tiếp</h1>
+          <p class="muted">Chọn bài trên kara.moe, phát video và xem phụ đề ASS render trực tiếp trên hình, không cần encode lại hardsub.</p>
         </section>
 
         <section class="panel lab-search-panel" aria-labelledby="search-heading">
@@ -51,7 +52,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
                   <span id="time-duration" class="player-time">0:00</span>
                   <button id="mute-toggle" class="btn small" type="button" aria-label="Tắt tiếng">🔊</button>
                   <input id="volume-bar" class="volume-bar" type="range" min="0" max="1" step="0.01" value="1" aria-label="Âm lượng" />
-                  <button id="fullscreen-toggle" class="btn small" type="button">⛶ Toàn màn hình</button>
+                  <button id="fullscreen-toggle" class="btn small" type="button" aria-label="Toàn màn hình" title="Toàn màn hình">⛶</button>
                 </div>
               </div>
             </div>
@@ -60,9 +61,6 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
                 <label class="btn small file-button">Nạp file .ass<input id="ass-file" type="file" accept=".ass,text/plain" hidden /></label>
                 <a id="ass-download" class="link small-link" target="_blank" rel="noopener noreferrer" hidden>Tải ASS gốc ↗</a>
               </div>
-              <label class="field ass-editor-label" for="ass-editor">Nội dung ASS <span class="muted">· thay đổi được áp dụng khi gõ</span></label>
-              <textarea id="ass-editor" class="ass-editor" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="Tìm một bài để tạo phụ đề xem trước, hoặc nạp file .ass của bạn…"></textarea>
-              <p id="ass-note" class="muted ass-note">Bản xem trước được render tự động. Nạp file .ass khác hoặc sửa nội dung để cập nhật ngay, không cần bấm nút render.</p>
             </div>
           </div>
         </section>
