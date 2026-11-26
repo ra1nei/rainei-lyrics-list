@@ -1,0 +1,20 @@
+@media (min-width: 1500px) {
+  main {
+    max-width: 1920px;
+    padding-right: clamp(40px, 3.5vw, 76px);
+    padding-left: clamp(40px, 3.5vw, 76px);
+  }
+}
+
+@media (min-width: 1800px) {
+  body { font-size: 17px; }
+  .grid:not(.list-view) { gap: 30px 26px; }
+  .card { padding: 14px; }
+  .card h3 { font-size: 18px; }
+  .card p, .card-meta { font-size: 12px; }
+  .toolbar input, .toolbar select, .toolbar .btn { font-size: 14px; }
+}
+
+@media (max-width: 760px) {
+  main { max-width: 100%; }
+}
