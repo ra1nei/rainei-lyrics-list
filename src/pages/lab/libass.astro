@@ -1,0 +1,75 @@
+---
+import '../../styles/studio.css';
+import '../../styles/libass-lab.css';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="description" content="Thử nghiệm phát video kara.moe và render phụ đề ASS trực tiếp bằng libass." />
+    <title>Thử nghiệm ASS · Rainei</title>
+    <link rel="icon" href={`${base}/favicon.svg`} />
+  </head>
+  <body>
+    <div id="app" data-base={base}>
+      <header class="topbar">
+        <a class="brand" href={`${base}/`}><span class="brand-mark">r.</span><span>rainei<span class="brand-sub">THỬ NGHIỆM ASS</span></span></a>
+        <nav><a href={`${base}/`}>Thư viện</a><a href={`${base}/lab/libass/`} class="active">Render ASS</a></nav>
+      </header>
+      <main class="libass-page">
+        <section class="lab-intro">
+          <p class="eyebrow">Prototype · kara.moe API + JASSUB/libass</p>
+          <h1>Sửa phụ đề, xem ngay</h1>
+          <p class="muted">Tìm bài trên kara.moe để lấy media gốc, rồi nạp hoặc sửa file ASS. Phụ đề được render trong trình duyệt khi video đang phát, không cần encode lại.</p>
+        </section>
+
+        <section class="panel lab-search-panel" aria-labelledby="search-heading">
+          <div class="section-head"><h2 id="search-heading">Tìm bài hát</h2><a href="https://api.karaokes.moe/server/" target="_blank" rel="noopener noreferrer" class="muted">Tài liệu API ↗</a></div>
+          <form id="kara-search" class="lab-search-row">
+            <label class="search"><span class="search-icon" aria-hidden="true">⌕</span><input id="kara-query" type="search" minlength="2" placeholder="Tên bài hát, anime hoặc KID…" autocomplete="off" required aria-label="Tìm bài trên kara.moe" /></label>
+            <button class="btn primary" type="submit">Tìm trên kara.moe</button>
+          </form>
+          <p id="search-status" class="muted lab-status" role="status" aria-live="polite">Tìm kiếm chỉ đọc dữ liệu công khai từ kara.moe.</p>
+          <div id="kara-results" class="kara-results" aria-label="Kết quả tìm kiếm"></div>
+        </section>
+
+        <section id="selected-kara" class="panel selected-kara" hidden aria-live="polite"></section>
+
+        <section class="panel player-panel" aria-labelledby="player-heading">
+          <div class="section-head"><h2 id="player-heading">Trình phát và phụ đề</h2><span id="render-status" class="badge">Chưa nạp phụ đề</span></div>
+          <div class="player-grid">
+            <div class="player-column">
+              <div id="player-stage" class="player-stage">
+                <video id="kara-video" controls playsinline preload="metadata" aria-label="Video karaoke"></video>
+                <p id="player-empty" class="player-empty">Chọn một bài có video hoặc nạp video từ máy để bắt đầu.</p>
+              </div>
+              <label class="field source-field">URL media<input id="media-url" type="url" placeholder="https://kara.moe/downloads/medias/…" inputmode="url" /></label>
+              <div class="player-actions">
+                <button id="apply-media" class="btn small" type="button">Mở URL media</button>
+                <label class="btn small file-button">Nạp video từ máy<input id="video-file" type="file" accept="video/*,audio/*" hidden /></label>
+                <a id="kara-page-link" class="link small-link" target="_blank" rel="noopener noreferrer" hidden>Mở trang bài hát ↗</a>
+              </div>
+              <p id="media-note" class="muted media-note">Nguồn kara.moe được phát trực tiếp bằng thẻ video của trình duyệt. Một số bài chỉ có âm thanh hoặc có thể không được nhúng bởi trình duyệt.</p>
+            </div>
+            <div class="ass-column">
+              <div class="ass-toolbar">
+                <label class="btn small file-button">Nạp file .ass<input id="ass-file" type="file" accept=".ass,text/plain" hidden /></label>
+                <a id="ass-download" class="link small-link" target="_blank" rel="noopener noreferrer" hidden>Tải ASS gốc ↗</a>
+                <button id="apply-ass" class="btn small" type="button">Render lại</button>
+              </div>
+              <label class="field ass-editor-label" for="ass-editor">Nội dung ASS <span class="muted">· thay đổi được áp dụng khi gõ</span></label>
+              <textarea id="ass-editor" class="ass-editor" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="Tìm một bài để tạo phụ đề xem trước, hoặc nạp file .ass của bạn…"></textarea>
+              <p id="ass-note" class="muted ass-note">Khi chọn bài, trang tạo bản ASS xem trước từ timing lyric của API. Để thử đúng kiểu chữ, hiệu ứng và line trong file của bạn, hãy nạp file .ass gốc đã tải về.</p>
+            </div>
+          </div>
+        </section>
+        <p class="lab-footnote">Thử nghiệm độc lập trên branch. Không ghi dữ liệu vào Supabase, không tải file lên máy chủ, không tạo bản hardsub.</p>
+      </main>
+      <footer><span>Rainei Lyrics List · Thử nghiệm</span><span>Render ASS bằng <a href="https://github.com/ThaUnknown/jassub" target="_blank" rel="noopener noreferrer">JASSUB</a> (libass/WebAssembly)</span></footer>
+      <div id="lab-notice" role="status" aria-live="polite" hidden></div>
+    </div>
+    <script>import '../../scripts/libass-lab.mjs';</script>
+  </body>
+</html>

@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "astro": "^5.17.1",
+    "jassub": "^2.5.38",
     "micromark": "^4.0.2"
   }
 }
