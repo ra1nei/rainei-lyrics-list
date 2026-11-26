@@ -10,9 +10,17 @@
   body { font-size: 17px; }
   .grid:not(.list-view) { gap: 30px 26px; }
   .card { padding: 14px; }
-  .card h3 { font-size: 18px; }
-  .card p, .card-meta { font-size: 12px; }
+  .card h3 { font-size: 20px; }
+  .card p { font-size: 15px; }
+  .card-meta, body .song-count { font-size: 14px; }
   .toolbar input, .toolbar select, .toolbar .btn { font-size: 14px; }
+}
+
+@media (min-width: 761px) {
+  .search-icon { top: 0; bottom: 0; display: grid; place-items: center; line-height: 1; transform: none; }
+  .card h3 { font-size: 19px; }
+  .card p { font-size: 14px; }
+  .card-meta, body .song-count { font-size: 13px; }
 }
 
 @media (max-width: 760px) {
