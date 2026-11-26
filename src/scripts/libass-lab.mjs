@@ -14,7 +14,6 @@ const form = $('#kara-search');
 const query = $('#kara-query');
 const results = $('#kara-results');
 const searchStatus = $('#search-status');
-const selected = $('#selected-kara');
 const video = $('#kara-video');
 const playerShell = $('#player-shell');
 const editor = $('#ass-editor');
@@ -25,7 +24,6 @@ let engine = null;
 let activeTrack = '';
 let updateTimer = 0;
 let noticeTimer = 0;
-let localVideoUrl = '';
 let sourceVersion = 0;
 
 function setNotice(message, isError = false) {
@@ -98,12 +96,56 @@ async function jsonRequest(url) {
   return response.json();
 }
 
-function showSearchResults(items) {
+async function fetchAnimeCovers(items) {
+  const ids = [...new Set(items.flatMap(kara => [
+    ...(kara.anilist_ids || []),
+    ...(kara.series || []).map(tag => tag.external_database_ids?.anilist),
+    ...(kara.franchises || []).map(tag => tag.external_database_ids?.anilist),
+  ]).map(Number).filter(Number.isInteger))].slice(0, 50);
+  if (!ids.length) return new Map();
+  try {
+    const response = await fetch('https://graphql.anilist.co', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ query: 'query KaraokeCovers($ids: [Int!]) { Page(page: 1, perPage: 50) { media(id_in: $ids, type: ANIME) { id coverImage { large medium } } } }', variables: { ids } }),
+    });
+    if (!response.ok) return new Map();
+    const payload = await response.json();
+    return new Map((payload.data?.Page?.media || []).map(media => [media.id, media.coverImage?.large || media.coverImage?.medium || '']).filter(([, cover]) => cover));
+  } catch {
+    return new Map();
+  }
+}
+
+function showSearchResults(items, covers = new Map()) {
   results.replaceChildren();
   for (const kara of items) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'kara-result';
+    const coverUrl = (kara.anilist_ids || []).map(Number).map(id => covers.get(id)).find(Boolean);
+    if (coverUrl) {
+      const cover = document.createElement('img');
+      cover.className = 'kara-result-cover';
+      cover.src = coverUrl;
+      cover.alt = '';
+      cover.loading = 'lazy';
+      cover.decoding = 'async';
+      cover.addEventListener('error', () => {
+        const fallback = document.createElement('span');
+        fallback.className = 'kara-result-cover kara-result-cover-empty';
+        fallback.setAttribute('aria-hidden', 'true');
+        fallback.textContent = '♫';
+        cover.replaceWith(fallback);
+      }, { once: true });
+      button.append(cover);
+    } else {
+      const placeholder = document.createElement('span');
+      placeholder.className = 'kara-result-cover kara-result-cover-empty';
+      placeholder.setAttribute('aria-hidden', 'true');
+      placeholder.textContent = '♫';
+      button.append(placeholder);
+    }
     const text = document.createElement('span');
     const title = document.createElement('strong');
     title.textContent = resultTitle(kara);
@@ -151,7 +193,8 @@ form.addEventListener('submit', async event => {
         const rightSeries = [...(right.series || []), ...(right.franchises || [])].some(tag => parsed.textWords.join(' ').includes(normalizeSearchText(tag.name)));
         return Number(rightSeries) - Number(leftSeries) || resultTitle(left).localeCompare(resultTitle(right));
       });
-    showSearchResults(items);
+    const covers = await fetchAnimeCovers(items);
+    showSearchResults(items, covers);
     searchStatus.textContent = items.length ? `Có ${items.length} kết quả${parsed.categories.size ? ` · ${[...parsed.categories].join('/')}` : ''}. Chọn một bài để lấy video và subtitle timing.` : 'Không tìm thấy kết quả phù hợp. Thử tựa bài, tên anime hoặc OP/ED/insert.';
   } catch (error) {
     searchStatus.textContent = error.message || 'Không thể kết nối kara.moe.';
@@ -256,16 +299,17 @@ async function renderTrack({ recreate = false } = {}) {
   }
 }
 
-function loadMedia(url, { local = false } = {}) {
+function loadMedia(url) {
   const version = ++sourceVersion;
   video.pause();
   void destroyEngine();
-  if (localVideoUrl) {
-    URL.revokeObjectURL(localVideoUrl);
-    localVideoUrl = '';
+  if (!url) {
+    video.removeAttribute('src');
+    video.load();
+    video.hidden = true;
+    $('#player-empty').hidden = false;
+    return;
   }
-  if (!url) return;
-  if (local) localVideoUrl = url;
   $('#player-empty').hidden = true;
   video.hidden = false;
   video.onloadedmetadata = () => {
@@ -281,7 +325,7 @@ function loadMedia(url, { local = false } = {}) {
   video.onerror = () => {
     if (version !== sourceVersion) return;
     setRenderMessage('Không mở được media', true);
-    setNotice('Trình duyệt không phát được URL này. Hãy thử tải media gốc hoặc nạp video từ máy.', true);
+    setNotice('Trình duyệt không phát được media này. Hãy thử chọn một bài khác có video.', true);
   };
   video.src = url;
   video.load();
@@ -292,34 +336,11 @@ async function selectKara(kid) {
   searchStatus.textContent = 'Đang lấy thông tin bài hát…';
   try {
     const kara = await jsonRequest(`${API}/karas/${encodeURIComponent(kid)}`);
-    const title = document.createElement('h2');
-    title.textContent = resultTitle(kara);
-    const description = document.createElement('p');
-    description.className = 'muted';
-    description.textContent = [kara.songname, kara.year, kara.mediafile].filter(Boolean).join(' · ');
-    const info = document.createElement('div');
-    info.append(title, description);
-    const links = document.createElement('div');
-    links.className = 'selected-links';
-    const media = document.createElement('a');
-    media.href = mediaURL(kara.mediafile || '');
-    media.target = '_blank';
-    media.rel = 'noopener noreferrer';
-    media.className = 'link small-link';
-    media.textContent = 'Mở media gốc ↗';
-    links.append(media);
-    selected.replaceChildren(info, links);
-    selected.hidden = false;
-    const pageLink = $('#kara-page-link');
-    pageLink.href = `https://kara.moe/kara/resolution/${encodeURIComponent(kara.kid)}`;
-    pageLink.hidden = false;
-
     if (kara.mediafile && mediaKind(kara.mediafile) === 'video') {
       const url = mediaURL(kara.mediafile);
-      $('#media-url').value = url;
       loadMedia(url);
     } else {
-      $('#media-url').value = '';
+      loadMedia('');
       setRenderMessage('Bài này không có video', true);
       setNotice('Bài được chọn chỉ có âm thanh. Nạp video từ máy hoặc tìm bài có file video để xem ASS overlay.');
     }
@@ -348,23 +369,6 @@ async function selectKara(kid) {
   }
 }
 
-$('#apply-media').addEventListener('click', () => {
-  const value = $('#media-url').value.trim();
-  if (!value) return setNotice('Nhập URL media hoặc chọn file từ máy.', true);
-  try {
-    const url = new URL(value, location.href);
-    if (!['https:', 'http:', 'blob:'].includes(url.protocol)) throw new Error('Chỉ dùng URL HTTP(S) hoặc blob:');
-    if (url.protocol === 'blob:') throw new Error('Hãy nạp file qua nút “Nạp video từ máy”.');
-    loadMedia(url.href);
-  } catch (error) { setNotice(error.message || 'URL media không hợp lệ.', true); }
-});
-
-$('#video-file').addEventListener('change', async event => {
-  const file = event.target.files?.[0];
-  if (!file) return;
-  loadMedia(URL.createObjectURL(file), { local: true });
-});
-
 $('#ass-file').addEventListener('change', async event => {
   const file = event.target.files?.[0];
   if (!file) return;
@@ -381,7 +385,6 @@ editor.addEventListener('input', () => {
   updateTimer = setTimeout(() => { void renderTrack(); }, 180);
 });
 
-$('#apply-ass').addEventListener('click', () => { void renderTrack({ recreate: true }); });
 video.addEventListener('seeked', () => {
   if (engine && activeTrack) void engine.manualRender(currentFrame(), true);
 });
@@ -438,7 +441,6 @@ document.addEventListener('fullscreenchange', () => {
 });
 window.addEventListener('pagehide', () => {
   void destroyEngine();
-  if (localVideoUrl) URL.revokeObjectURL(localVideoUrl);
 });
 
 $('#kara-video').hidden = true;
