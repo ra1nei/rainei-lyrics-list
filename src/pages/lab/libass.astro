@@ -41,9 +41,20 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
           <div class="section-head"><h2 id="player-heading">Trình phát và phụ đề</h2><span id="render-status" class="badge">Chưa nạp phụ đề</span></div>
           <div class="player-grid">
             <div class="player-column">
-              <div id="player-stage" class="player-stage">
-                <video id="kara-video" controls playsinline preload="metadata" aria-label="Video karaoke"></video>
-                <p id="player-empty" class="player-empty">Chọn một bài có video hoặc nạp video từ máy để bắt đầu.</p>
+              <div id="player-shell" class="player-shell">
+                <div id="player-stage" class="player-stage">
+                  <video id="kara-video" playsinline preload="metadata" aria-label="Video karaoke"></video>
+                  <p id="player-empty" class="player-empty">Chọn một bài có video hoặc nạp video từ máy để bắt đầu.</p>
+                </div>
+                <div class="player-controls" aria-label="Điều khiển video">
+                  <button id="play-toggle" class="btn small" type="button" aria-label="Phát video">▶</button>
+                  <span id="time-current" class="player-time">0:00</span>
+                  <input id="seek-bar" class="seek-bar" type="range" min="0" max="0" step="0.01" value="0" aria-label="Vị trí phát" />
+                  <span id="time-duration" class="player-time">0:00</span>
+                  <button id="mute-toggle" class="btn small" type="button" aria-label="Tắt tiếng">🔊</button>
+                  <input id="volume-bar" class="volume-bar" type="range" min="0" max="1" step="0.01" value="1" aria-label="Âm lượng" />
+                  <button id="fullscreen-toggle" class="btn small" type="button">⛶ Toàn màn hình</button>
+                </div>
               </div>
               <label class="field source-field">URL media<input id="media-url" type="url" placeholder="https://kara.moe/downloads/medias/…" inputmode="url" /></label>
               <div class="player-actions">

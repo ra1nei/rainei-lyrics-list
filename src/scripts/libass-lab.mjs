@@ -16,6 +16,7 @@ const results = $('#kara-results');
 const searchStatus = $('#search-status');
 const selected = $('#selected-kara');
 const video = $('#kara-video');
+const playerShell = $('#player-shell');
 const editor = $('#ass-editor');
 const renderStatus = $('#render-status');
 const notice = $('#lab-notice');
@@ -329,6 +330,57 @@ editor.addEventListener('input', () => {
 $('#apply-ass').addEventListener('click', () => { void renderTrack({ recreate: true }); });
 video.addEventListener('seeked', () => {
   if (engine && activeTrack) void engine.manualRender(currentFrame(), true);
+});
+
+function formatTime(seconds) {
+  if (!Number.isFinite(seconds)) return '0:00';
+  const total = Math.max(0, Math.floor(seconds));
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+}
+
+$('#play-toggle').addEventListener('click', () => {
+  if (video.paused) void video.play().catch(() => setNotice('Không thể phát video này.', true));
+  else video.pause();
+});
+video.addEventListener('play', () => {
+  $('#play-toggle').textContent = '❚❚';
+  $('#play-toggle').setAttribute('aria-label', 'Tạm dừng video');
+});
+video.addEventListener('pause', () => {
+  $('#play-toggle').textContent = '▶';
+  $('#play-toggle').setAttribute('aria-label', 'Phát video');
+});
+video.addEventListener('timeupdate', () => {
+  $('#time-current').textContent = formatTime(video.currentTime);
+  $('#seek-bar').value = String(video.currentTime || 0);
+});
+video.addEventListener('loadedmetadata', () => {
+  $('#time-duration').textContent = formatTime(video.duration);
+  $('#seek-bar').max = String(Number.isFinite(video.duration) ? video.duration : 0);
+});
+$('#seek-bar').addEventListener('input', event => {
+  video.currentTime = Number(event.currentTarget.value);
+});
+$('#mute-toggle').addEventListener('click', () => {
+  video.muted = !video.muted;
+  $('#mute-toggle').textContent = video.muted ? '🔇' : '🔊';
+  $('#mute-toggle').setAttribute('aria-label', video.muted ? 'Bật tiếng' : 'Tắt tiếng');
+});
+$('#volume-bar').addEventListener('input', event => {
+  video.volume = Number(event.currentTarget.value);
+  video.muted = video.volume === 0;
+  $('#mute-toggle').textContent = video.muted ? '🔇' : '🔊';
+});
+$('#fullscreen-toggle').addEventListener('click', async () => {
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else await playerShell.requestFullscreen();
+  } catch (error) {
+    setNotice(error.message || 'Trình duyệt không hỗ trợ toàn màn hình.', true);
+  }
+});
+document.addEventListener('fullscreenchange', () => {
+  $('#fullscreen-toggle').textContent = document.fullscreenElement ? '⤢ Thu nhỏ' : '⛶ Toàn màn hình';
 });
 window.addEventListener('pagehide', () => {
   void destroyEngine();
