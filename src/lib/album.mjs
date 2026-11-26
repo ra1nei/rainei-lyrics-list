@@ -28,6 +28,7 @@ export function mergeAlbumRows(seriesId, originals, rows, { validate = true } = 
     const original = byId.get(row.id);
     if (originals.some(e => e.id === row.id) && !original) throw new Error('Bài hát không thuộc anime đang sửa.');
     const data = { ...(original?.data || {}), ...row.data };
+    delete data.poster;
     const order = data.order === '' || data.order == null ? null : Number(data.order);
     data.addedAt ||= original?.created_at || original?.updated_at || new Date().toISOString();
     if (validate) {
@@ -39,7 +40,6 @@ export function mergeAlbumRows(seriesId, originals, rows, { validate = true } = 
         if (!['OP','ED','INS','MV','MISC'].includes(data.type)) throw new Error('Loại bài không hợp lệ.');
         if (order !== null && (!Number.isFinite(order) || order < 0)) throw new Error('Thứ tự bài hát phải là số không âm.');
         data.video = normalizeMediaURL(data.video, 'Video MP4 URL');
-        data.poster = normalizeMediaURL(data.poster, 'Poster video URL');
       } catch (error) { error.entryId = row.id; throw error; }
     }
     return { ...original, id: row.id, kind: 'song', parent_id: seriesId, data: { ...data, order } };

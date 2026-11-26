@@ -3,6 +3,14 @@ import { createStore, normalize } from '../lib/store.mjs';
 import { micromark } from 'micromark';
 import { mergeAlbumRows, compareAlbumSongs } from '../lib/album.mjs';
 import { filterByPublication } from '../lib/publication.mjs';
+import { getKara, searchKara, mediaURL, lyricsURL, mediaKind, fetchKaraAss, karaArtist, karaSongType, resultTitle } from '../lib/kara-api.mjs';
+import JASSUB from 'jassub';
+import workerUrl from 'jassub/dist/worker/worker.js?worker&url';
+import wasmUrl from 'jassub/dist/wasm/jassub-worker.wasm?url';
+import wasmWorkerUrl from 'jassub/dist/wasm/jassub-worker.js?url';
+import modernWasmUrl from 'jassub/dist/wasm/jassub-worker-modern.wasm?url';
+import modernWasmWorkerUrl from 'jassub/dist/wasm/jassub-worker-modern.js?url';
+import defaultFontUrl from 'jassub/dist/default.woff2?url';
 import '../styles/admin.css';
 import '../styles/admin-width.css';
 import '../styles/colors.css';
@@ -15,6 +23,7 @@ import '../styles/context-menu.css';
 import '../styles/toc.css';
 import '../styles/detail.css';
 import '../styles/card-titles.css';
+import '../styles/song-karaoke.css';
 import './card-titles.mjs';
 
 const app = document.querySelector('#app');
@@ -46,9 +55,26 @@ const songPublicationSummaryHTML = songs => {
 };
 let store, published = [], drafts = [], current = null, dirty = false, actionPending = false;
 let albumSeriesId = null, albumRows = [], animeDirty = false, songsDirty = false;
+const songRenderers = new Map();
+async function destroySongRenderers() {
+  const engines=[...songRenderers.values()];songRenderers.clear();
+  await Promise.all(engines.map(async engine=>{try{await engine.destroy();}catch{/* Renderer may already be disposed. */}}));
+}
+function songFrame(video) { return { expectedDisplayTime: performance.now(), width: video.videoWidth||1920, height: video.videoHeight||1080, mediaTime: video.currentTime||0 }; }
+async function renderSongAss(block, track, recreate=false) {
+  const video=block.querySelector('.song-preview-video'), id=block.dataset.songId;
+  if(!track||!video.videoWidth)return;
+  try {
+    let engine=songRenderers.get(id);
+    if(!engine||recreate){if(engine){songRenderers.delete(id);await engine.destroy();}engine=new JASSUB({video,subContent:track,workerUrl,wasmUrl,wasmWorkerUrl,modernWasmUrl,modernWasmWorkerUrl,availableFonts:{'liberation sans':defaultFontUrl},libassMemoryLimit:128,libassGlyphLimit:5000});songRenderers.set(id,engine);await engine.ready;}
+    else await engine.renderer.setTrack(track);
+    await engine.manualRender(songFrame(video),true);
+    block.querySelector('.song-render-status').textContent='ASS đang render trực tiếp';
+  } catch(error) { block.querySelector('.song-render-status').textContent=`Render lỗi: ${error.message||'không khởi động được libass'}`; }
+}
 function syncEditorDirty() { dirty = animeDirty || songsDirty; }
 function songsHaveChanges(rows) {
-  const editable=data=>['title','artist','type','group','order','video','poster','body'].map(key=>key==='order'?(data[key]==null||data[key]===''?'':String(Number(data[key]))):String(data[key]??(key==='type'?'MISC':'')).replace(/\r\n?/g,'\n'));
+  const editable=data=>['title','artist','type','group','order','video','karaKid','body'].map(key=>key==='order'?(data[key]==null||data[key]===''?'':String(Number(data[key]))):String(data[key]??(key==='type'?'MISC':'')).replace(/\r\n?/g,'\n'));
   return rows.some(row=>{const saved=drafts.find(entry=>entry.id===row.id);return !saved||JSON.stringify(editable(saved.data))!==JSON.stringify(editable(row.data));});
 }
 let publishSelectionMode = false, selectionSeriesId = null, selectedSongIds = new Set();
@@ -68,6 +94,7 @@ function syncAdminLogout(inAdmin) {
   if (logout) logout.hidden = !(inAdmin && store?.signedIn);
 }
 function shell(content) {
+  void destroySongRenderers();
   syncAdminLogout(true);
   clearTimeout(searchTimer); searchController?.abort(); searchVersion++; currentMedia=[];
   main.innerHTML = '<section class="admin-workspace">' + adminSearchHTML() + '<div class="admin-content">' + content + '</div></section>';
@@ -169,7 +196,7 @@ function songAnchorId(entry, songs=[]) {
 }
 function songHTML(entry, songs=[]) {
   const d=entry.data;
-  return `<article class="song panel" id="${songAnchorId(entry,songs)}"><header class="song-heading"><div class="song-title-row"><span class="badge song-type">${esc(d.type||'MISC')}</span><h2>${esc(d.title)}</h2></div>${d.artist?`<p class="song-artist">— ${esc(d.artist)}</p>`:''}</header>${d.video&&safeURL(d.video)?`<video controls playsinline preload="none" poster="${esc(safeURL(d.poster))}" src="${esc(safeURL(d.video))}"></video>`:''}<div class="song-lyrics-row"><div class="lyrics">${micromark(d.body||'', {allowDangerousHtml:false,allowDangerousProtocol:false})}</div><button type="button" class="copy-lyrics" data-action="copy" data-id="${esc(entry.id)}" aria-label="Sao chép lời" title="Sao chép lời"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg></button></div></article>`;
+  return `<article class="song panel" id="${songAnchorId(entry,songs)}"><header class="song-heading"><div class="song-title-row"><span class="badge song-type">${esc(d.type||'MISC')}</span><h2>${esc(d.title)}</h2></div>${d.artist?`<p class="song-artist">— ${esc(d.artist)}</p>`:''}</header>${d.video&&safeURL(d.video)?`<video controls playsinline preload="none" src="${esc(safeURL(d.video))}"></video>`:''}<div class="song-lyrics-row"><div class="lyrics">${micromark(d.body||'', {allowDangerousHtml:false,allowDangerousProtocol:false})}</div><button type="button" class="copy-lyrics" data-action="copy" data-id="${esc(entry.id)}" aria-label="Sao chép lời" title="Sao chép lời"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg></button></div></article>`;
 }
 function songTOCHTML(songs, series) {
   const groups = new Map();
@@ -296,11 +323,12 @@ function animeFormatField(value='') {
 }
 function animeEditorActions(entry) {
   const live=published.some(e=>e.id===entry.id),saved=drafts.some(e=>e.id===entry.id);
-  return `<div class="anime-editor-actions"><div class="editor-action-main" role="group" aria-label="Xem và lưu nội dung">${button('Xem trước','preview-current',entry.id,'action-preview')}<button type="submit" class="btn">Lưu nháp</button>${button('Xuất bản','publish-current',entry.id,'primary')}</div>${live||saved?`<div class="editor-action-secondary" role="group" aria-label="Quản lý xuất bản và xoá">${live?button('Gỡ xuất bản','unpublish',entry.id,'action-unpublish'):''}${saved?button('Xoá phim','delete',entry.id,'danger action-delete'):''}</div>`:''}</div>`;
+  return `<div class="anime-editor-actions"><div class="editor-action-main" role="group" aria-label="Xem và lưu nội dung">${button('Xem trước','preview-current',entry.id,'action-preview')}${live?'': '<button type="submit" class="btn">Lưu nháp</button>'}${button(live?'Cập nhật bản công khai':'Xuất bản','publish-current',entry.id,'primary')}</div>${live||saved?`<div class="editor-action-secondary" role="group" aria-label="Quản lý xuất bản và xoá">${live?button('Gỡ xuất bản','unpublish',entry.id,'action-unpublish'):''}${saved?button('Xoá phim','delete',entry.id,'danger action-delete'):''}</div>`:''}</div>`;
 }
 function animeInfoHTML(entry) {
   const d=entry.data;
-  return `<section class="panel anime-info-panel" aria-labelledby="anime-info-heading"><div class="section-head"><h2 id="anime-info-heading">Thông tin phim</h2><span id="save-state" class="badge draft">${drafts.some(e=>e.id===entry.id)?status(entry)[1]:'Chưa lưu'}</span></div><form id="entry-form"><div class="editor-layout"><div>${image(d.cover,d.title,'editor-poster')}<p class="muted" style="font-size:11px">${d.anilistId?'Poster AniList · #'+d.anilistId:'Ảnh bìa anime'}</p></div><div class="form-grid">${field('Tên hiển thị','title',d.title,'required')}${field('Tên tiếng Việt (tuỳ chọn)','vietnamese',d.vietnamese)}</div></div>${animeEditorActions(entry)}</form></section>`;
+  const state=drafts.some(e=>e.id===entry.id)?status(entry):['draft','Chưa lưu'];
+  return `<section class="panel anime-info-panel" aria-labelledby="anime-info-heading"><div class="section-head"><h2 id="anime-info-heading">Thông tin phim</h2><span id="save-state" class="badge ${state[0]}">${state[1]}</span></div><form id="entry-form"><div class="editor-layout"><div>${image(d.cover,d.title,'editor-poster')}<p class="muted" style="font-size:11px">${d.anilistId?'Poster AniList · #'+d.anilistId:'Ảnh bìa anime'}</p></div><div class="form-grid">${field('Tên hiển thị','title',d.title,'required')}${field('Tên tiếng Việt (tuỳ chọn)','vietnamese',d.vietnamese)}</div></div>${animeEditorActions(entry)}</form></section>`;
 }
 function bindAnimeInfo() {
   $('#entry-form').addEventListener('input',()=>{animeDirty=true;syncEditorDirty();$('#save-state').textContent='Có thay đổi chưa lưu';});
@@ -340,19 +368,61 @@ function renderAlbum(entry, rows, openIds=new Set()) {
   if(animeDirty)$('#save-state').textContent='Có thay đổi chưa lưu';
   bindPublicationGroups('song');
   $('#album-form').addEventListener('input',e=>{
-    if(e.target.matches('[data-select-song]'))return;
+    if(e.target.matches('[data-select-song], .song-kara-search input, .song-ass-file'))return;
     songsDirty=true;syncEditorDirty();$('#album-save-state').textContent='Có thay đổi chưa lưu';
     const block=e.target.closest('[data-song-id]');
     if(block&&e.target.name==='title')block.querySelector('.song-summary-title').textContent=e.target.value||'Bài hát mới';
+    if(block&&(e.target.name==='artist'||e.target.name==='type'))block.querySelector('.song-summary-info small').textContent=`${block.querySelector('[name="type"]').value}${block.querySelector('[name="artist"]').value?' · '+block.querySelector('[name="artist"]').value:''}`;
     if(block){const state=block.querySelector('.song-edit-state');if(state)state.textContent='Chưa lưu thay đổi';}
   });
-  $('#album-form').addEventListener('submit',e=>e.preventDefault());
+  $('#album-form').addEventListener('submit',e=>{if(e.target.matches('.song-kara-search'))return;e.preventDefault();});
+  bindSongKaraEditors();
   $('#album-form').addEventListener('change',e=>{
-    if(!e.target.matches('[data-select-song]'))return;
+    if(e.target.matches('[data-select-song]')){
     if(e.target.checked)selectedSongIds.add(e.target.dataset.selectSong);else selectedSongIds.delete(e.target.dataset.selectSong);
     syncPublishSelection();
+    return;
+    }
+    if(e.target.matches('.song-kara-search input, .song-ass-file'))return;
+    if(e.target.closest('[data-song-id]')){songsDirty=true;syncEditorDirty();$('#album-save-state').textContent='Có thay đổi chưa lưu';}
   });
   syncPublishSelection();
+}
+function bindSongKaraEditors() {
+  for(const block of main.querySelectorAll('details[data-song-id]')) {
+    const searchForm=block.querySelector('.song-kara-search'), searchInput=searchForm.querySelector('input'), results=block.querySelector('.song-kara-results');
+    searchForm.querySelector('.song-kara-submit').addEventListener('click',async()=>{
+      const term=searchInput.value.trim();if(!term)return;
+      const statusEl=block.querySelector('.song-kara-status');statusEl.textContent='Đang tìm trên kara.moe…';results.hidden=true;
+      try { const items=await searchKara(term);results.innerHTML=items.slice(0,30).map(kara=>`<button type="button" class="song-kara-result" data-kid="${esc(kara.kid)}"><strong>${esc(resultTitle(kara))}</strong><small>${esc((kara.series||[]).map(x=>x.name).join(' · '))} · ${esc(karaSongType(kara))} · ${esc(karaArtist(kara)||'Chưa rõ nghệ sĩ')} · ${esc(mediaKind(kara.mediafile||''))}</small></button>`).join('')||'<p class="muted">Không tìm thấy kết quả phù hợp.</p>';results.hidden=false;statusEl.textContent=`${items.length} kết quả · chọn bài để liên kết video, nghệ sĩ và thể loại.`; }
+      catch(error){statusEl.textContent=error.message||'Không tìm được trên kara.moe.';}
+    });
+    searchInput.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();searchForm.querySelector('.song-kara-submit').click();}});
+    results.addEventListener('click',event=>{const result=event.target.closest('[data-kid]');if(result)void selectKaraForSong(block,result.dataset.kid);});
+    block.querySelector('.song-ass-file').addEventListener('change',async event=>{const file=event.target.files?.[0];if(!file)return;try{await renderSongAss(block,await file.text(),true);}catch(error){block.querySelector('.song-render-status').textContent=error.message;}event.target.value='';});
+    block.querySelector('.song-preview-video').addEventListener('seeked',()=>{const engine=songRenderers.get(block.dataset.songId);if(engine)void engine.manualRender(songFrame(block.querySelector('video')),true);});
+    block.addEventListener('toggle',()=>{if(block.open&&block.querySelector('[name="karaKid"]').value&&!block.dataset.karaLoaded)void restoreSongKara(block);});
+    if(block.open&&block.querySelector('[name="karaKid"]').value)void restoreSongKara(block);
+  }
+}
+async function selectKaraForSong(block,kid) {
+  const statusEl=block.querySelector('.song-kara-status');statusEl.textContent='Đang nạp video và thông tin bài…';
+  try {
+    const kara=await getKara(kid);if(!kara.mediafile||mediaKind(kara.mediafile)!=='video')throw new Error('Kết quả này không có video để preview.');
+    block.querySelector('[name="video"]').value=mediaURL(kara.mediafile);block.querySelector('[name="karaKid"]').value=kara.kid;
+    block.querySelector('[name="artist"]').value=karaArtist(kara);const type=karaSongType(kara),typeSelect=block.querySelector('[name="type"]');typeSelect.value=type;
+    for(const input of [block.querySelector('[name="video"]'),block.querySelector('[name="karaKid"]'),block.querySelector('[name="artist"]'),typeSelect])input.dispatchEvent(new Event('input',{bubbles:true}));
+    block.querySelector('.song-summary-info small').textContent=`${typeSelect.value}${karaArtist(kara)?' · '+karaArtist(kara):''}`;
+    block.querySelector('.song-preview-empty').hidden=true;const video=block.querySelector('.song-preview-video');video.src=mediaURL(kara.mediafile);video.load();block.dataset.karaLoaded=kid;
+    const ass=await fetchKaraAss(kara);const source=block.querySelector('.song-ass-source');if(ass.filename){source.href=lyricsURL(ass.filename);source.hidden=false;}
+    statusEl.textContent=`${resultTitle(kara)} · ${kara.mediafile}`;
+    await new Promise((resolve,reject)=>{if(video.readyState>=1)return resolve();video.addEventListener('loadedmetadata',resolve,{once:true});video.addEventListener('error',()=>reject(new Error('Trình duyệt không phát được video kara.moe.')),{once:true});});
+    if(ass.content)await renderSongAss(block,ass.content,true);else block.querySelector('.song-render-status').textContent='Video sẵn sàng · bài này chưa có ASS mặc định; nạp file .ass của bạn.';
+  } catch(error){statusEl.textContent=error.message||'Không thể nạp bài từ kara.moe.';}
+}
+async function restoreSongKara(block) {
+  block.dataset.karaLoaded='loading';
+  try{await selectKaraForSong(block,block.querySelector('[name="karaKid"]').value);}catch{/* Error is shown in the row status. */}
 }
 function publishSelectionToolbar(enabled) {
   return `<div class="batch-publish-actions">${button('Chọn','batch-start','','small batch-start')}<div class="batch-selection-tools"><span id="batch-selection-count" class="selection-count">0 bài đã chọn</span><div class="selection-options">${button('Chọn tất cả','batch-select-all','','small')}${button('Huỷ','batch-cancel','','small')}</div>${enabled?button('Xuất bản','album-publish-selected','','primary'):'<button type="button" class="btn primary" disabled title="Công khai phim trước để xuất bản bài hát">Xuất bản</button>'}</div></div>`;
@@ -371,7 +441,7 @@ function songEditorHTML(song,index,open=false) {
   const d=song.data,s=status(song),saved=drafts.some(e=>e.id===song.id);
   const isPublished=published.some(e=>e.id===song.id);
   const parentPublished=published.some(e=>e.id===song.parent_id&&e.kind==='series');
-  return `<details class="panel song-editor ${isPublished?'song-published':'song-unpublished'}" data-song-id="${esc(song.id)}" ${open?'open':''}><summary class="song-summary"><span class="song-select-control"><input type="checkbox" data-select-song="${esc(song.id)}" aria-label="Chọn bài ${esc(d.title||index+1)}" ${selectedSongIds.has(song.id)?'checked':''}/></span><span class="song-summary-index">${index+1}</span><span class="song-summary-info"><strong class="song-summary-title">${esc(d.title||'Bài hát mới')}</strong><small>${esc(d.type||'MISC')}${d.artist?' · '+esc(d.artist):''}</small></span><span class="song-summary-status"><span class="badge ${isPublished?'live':'draft'}">${isPublished?'Đã publish':'Chưa publish'}</span><small class="song-edit-state">${saved?(isPublished&&s[0]==='draft'?'Có bản sửa nháp':''):'Chưa lưu'}</small></span><span class="song-chevron" aria-hidden="true">⌄</span></summary><div class="song-editor-body"><div class="form-grid">${field('Tên bài hát *','title',d.title,'required')}${field('Nghệ sĩ *','artist',d.artist,'required')}<label class="field">Loại bài *<select name="type" required>${['OP','ED','INS','MV','MISC'].map(t=>'<option '+((d.type||'MISC')===t?'selected':'')+'>'+t+'</option>').join('')}</select></label>${field('Mùa / nhóm *','group',d.group||'','required')}${field('Thứ tự (tuỳ chọn)','order',d.order??'','type="number" min="0" step="any" placeholder="Để trống: theo thứ tự thêm"')}${field('Đường dẫn video (tuỳ chọn)','video',d.video,'type="text" inputmode="url" placeholder="https://…"')}${field('Đường dẫn ảnh xem trước (tuỳ chọn)','poster',d.poster,'type="text" inputmode="url" placeholder="https://… hoặc /đường-dẫn-ảnh"')}<label class="field full">Lời bài hát<textarea name="body" spellcheck="false" rows="14" aria-label="Lời bài hát ${esc(d.title||index+1)}">\n${esc(d.body)}</textarea></label></div><div class="editor-footer">${button('Lưu nháp bài này','album-save',song.id,'small')}${parentPublished?button(isPublished?'Cập nhật bản công khai':'Xuất bản bài này','album-publish',song.id,'small'):'<button type="button" class="btn small" disabled title="Xuất bản anime trước khi công khai bài hát">Xuất bản · Anime chưa công khai</button>'}${saved&&isPublished?button('Gỡ xuất bản','album-unpublish',song.id,'small'):''}${button('Xoá bài hát','album-delete',song.id,'small danger')}</div></div></details>`;
+  return `<details class="panel song-editor ${isPublished?'song-published':'song-unpublished'}" data-song-id="${esc(song.id)}" ${open?'open':''}><summary class="song-summary"><span class="song-select-control"><input type="checkbox" data-select-song="${esc(song.id)}" aria-label="Chọn bài ${esc(d.title||index+1)}" ${selectedSongIds.has(song.id)?'checked':''}/></span><span class="song-summary-index">${index+1}</span><span class="song-summary-info"><strong class="song-summary-title">${esc(d.title||'Bài hát mới')}</strong><small>${esc(d.type||'MISC')}${d.artist?' · '+esc(d.artist):''}</small></span><span class="song-summary-status"><span class="badge ${isPublished?'live':'draft'}">${isPublished?'Đã xuất bản':'Chưa xuất bản'}</span><small class="song-edit-state">${saved?(isPublished&&s[0]==='draft'?'Có bản sửa nháp':''):'Chưa lưu'}</small></span><span class="song-chevron" aria-hidden="true">⌄</span></summary><div class="song-editor-body"><div class="form-grid">${field('Tên bài hát *','title',d.title,'required')}${field('Nghệ sĩ *','artist',d.artist,'required')}<label class="field">Loại bài *<select name="type" required>${['OP','ED','INS','MV','MISC'].map(t=>'<option '+((d.type||'MISC')===t?'selected':'')+'>'+t+'</option>').join('')}</select></label>${field('Mùa / nhóm *','group',d.group||'','required')}${field('Thứ tự (tuỳ chọn)','order',d.order??'','type="number" min="0" step="any" placeholder="Để trống: theo thứ tự thêm"')}<input type="hidden" name="video" value="${esc(d.video||'')}"/><input type="hidden" name="karaKid" value="${esc(d.karaKid||'')}"/><div class="field full"><span>Tìm video kara.moe</span><div class="song-kara-search"><div class="song-kara-searchbar"><input type="search" placeholder="Tên anime, OP/ED/insert hoặc tựa bài…" aria-label="Tìm video trên kara.moe"/><button type="button" class="btn small song-kara-submit">Tìm</button></div></div><div class="song-kara-status muted" role="status">${d.karaKid?'Đã liên kết KID '+esc(d.karaKid):'Chọn kết quả để lấy video, nghệ sĩ và loại bài.'}</div><div class="song-kara-results" hidden></div></div><section class="song-preview-section field full"><div class="song-preview-head"><strong>Xem trước video + ASS</strong><label class="btn small song-ass-label">Nạp .ass<input type="file" accept=".ass,text/plain" class="song-ass-file"/></label><a class="song-ass-source" hidden target="_blank" rel="noreferrer">Tải ASS gốc ↗</a></div><div class="song-preview-frame"><video class="song-preview-video" controls playsinline preload="metadata"></video><div class="song-preview-empty">Tìm và chọn video kara.moe để xem trước</div></div><small class="song-render-status muted">${d.karaKid?'Đang khôi phục video và ASS…':'Chờ video và phụ đề ASS'}</small></section><label class="field full">Lời bài hát<textarea name="body" spellcheck="false" rows="14" aria-label="Lời bài hát ${esc(d.title||index+1)}">\n${esc(d.body)}</textarea></label></div><div class="editor-footer">${isPublished?'':button('Lưu nháp bài này','album-save',song.id,'small')}${parentPublished?button(isPublished?'Cập nhật bản công khai':'Xuất bản bài này','album-publish',song.id,'small'):'<button type="button" class="btn small" disabled title="Xuất bản anime trước khi công khai bài hát">Xuất bản · Anime chưa công khai</button>'}${saved&&isPublished?button('Gỡ xuất bản','album-unpublish',song.id,'small'):''}${button('Xoá bài hát','album-delete',song.id,'small danger')}</div></div></details>`;
 }
 function readAlbum(validate = true) {
   const rows=[...main.querySelectorAll('[data-song-id]')].map(block=>({id:block.dataset.songId,data:Object.fromEntries([...block.querySelectorAll('[name]')].map(input=>[input.name,input.value]))}));
@@ -430,7 +500,7 @@ async function handleAction(action,id) {
   if(action==='anime-select-cancel'){animeSelectionMode=false;selectedAnimeIds.clear();syncAnimeSelection();return;}
   if(action==='anime-publish-selected'){
     const ids=drafts.filter(e=>e.kind==='series'&&selectedAnimeIds.has(e.id)).map(e=>e.id);
-    if(!ids.length)throw new Error('Chọn ít nhất một anime để publish.');
+    if(!ids.length)throw new Error('Chọn ít nhất một anime để xuất bản.');
     let done=0,failure=null;
     for(const animeId of ids){
       $('#anime-selection-count').textContent=`Đang xuất bản ${done+1}/${ids.length}…`;
@@ -446,7 +516,7 @@ async function handleAction(action,id) {
   if(action==='album-publish-all'||action==='album-publish-selected'){
     if(!published.some(e=>e.id===albumSeriesId&&e.kind==='series'))throw new Error('Xuất bản anime trước khi xuất bản các bài hát.');
     const ids=albumRows.filter(e=>action==='album-publish-all'||selectedSongIds.has(e.id)).map(e=>e.id);
-    if(!ids.length)throw new Error('Chọn ít nhất một bài hát để publish.');
+    if(!ids.length)throw new Error('Chọn ít nhất một bài hát để xuất bản.');
     await saveAlbum(ids);
     const openIds=openSongIds(),entry=current,pending=readAlbum(false),wasDirty=songsDirty;
     if(!ids.length)return;
@@ -525,7 +595,7 @@ async function handleAction(action,id) {
       if(!Array.isArray(entries)||entries.length>5000)throw new Error('File dữ liệu không hợp lệ.');
       if(!entries.every(e=>typeof e.id==='string'&&['series','song'].includes(e.kind)&&e.data&&typeof e.data.title==='string'))throw new Error('Cấu trúc entry không hợp lệ.');
       let added=0;for(const entry of [...entries].sort((a,b)=>(a.kind==='series'?0:1)-(b.kind==='series'?0:1))){if(!drafts.some(e=>e.id===entry.id)){await store.save({id:entry.id,kind:entry.kind,parent_id:entry.parent_id||null,data:entry.data});added++;}}
-      drafts=await loadDraftEntries();renderAdmin();notice(`Đã nhập ${added} entry thành bản nháp. Chưa publish.`);
+      drafts=await loadDraftEntries();renderAdmin();notice(`Đã nhập ${added} bài hát thành bản nháp. Chưa xuất bản.`);
     }));input.click();
   }
 }
