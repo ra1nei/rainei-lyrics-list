@@ -46,6 +46,44 @@ function mediaKind(filename = '') {
   return ['mp4', 'webm', 'ogv', 'mov'].includes(extension) ? 'video' : ['mp3', 'm4a', 'ogg', 'flac', 'wav'].includes(extension) ? 'audio' : 'media';
 }
 
+function normalizeSearchText(value = '') {
+  return String(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+const categoryAliases = new Map([
+  ['op', 'OP'], ['opening', 'OP'], ['openings', 'OP'],
+  ['ed', 'ED'], ['ending', 'ED'], ['endings', 'ED'],
+  ['in', 'IN'], ['ins', 'IN'], ['insert', 'IN'], ['inserts', 'IN'], ['insertion', 'IN'],
+]);
+
+function parseSearch(term) {
+  const words = normalizeSearchText(term).split(/\s+/).filter(Boolean);
+  const categories = new Set(words.map(word => categoryAliases.get(word)).filter(Boolean));
+  const textWords = words.filter(word => !categoryAliases.has(word));
+  return { categories, textWords };
+}
+
+function searchableKaraText(kara) {
+  return normalizeSearchText([
+    kara.songname,
+    ...Object.values(kara.titles || {}),
+    ...(kara.titles_aliases || []),
+    ...(kara.series || []).flatMap(tag => [tag.name, tag.short]),
+    ...(kara.franchises || []).flatMap(tag => [tag.name, tag.short]),
+    ...(kara.songtypes || []).flatMap(tag => [tag.name, tag.short, tag.karafile_tag]),
+  ].filter(Boolean).join(' '));
+}
+
+function filterKaraResults(items, parsed) {
+  return items.filter(kara => {
+    const searchText = searchableKaraText(kara);
+    if (!parsed.textWords.every(word => searchText.includes(word))) return false;
+    if (!parsed.categories.size) return true;
+    const types = new Set((kara.songtypes || []).flatMap(tag => [tag.name, tag.short, tag.karafile_tag]).filter(Boolean).map(value => normalizeSearchText(value).toUpperCase()));
+    return [...parsed.categories].some(category => types.has(category));
+  });
+}
+
 function mediaURL(filename) {
   return `${DOWNLOADS}/medias/${encodeURIComponent(filename)}`;
 }
@@ -70,7 +108,9 @@ function showSearchResults(items) {
     const title = document.createElement('strong');
     title.textContent = resultTitle(kara);
     const meta = document.createElement('small');
-    meta.textContent = [kara.songname, kara.year, kara.repository].filter(Boolean).join(' · ');
+    const seriesNames = [...new Set([...(kara.series || []), ...(kara.franchises || [])].map(tag => tag.name).filter(Boolean))];
+    const songTypes = [...new Set((kara.songtypes || []).map(tag => tag.name || tag.short).filter(Boolean))];
+    meta.textContent = [...seriesNames, ...songTypes, kara.songname, kara.year, kara.repository].filter(Boolean).join(' · ');
     text.append(title, meta);
     const kind = document.createElement('span');
     kind.className = 'kara-media-kind';
@@ -94,11 +134,25 @@ form.addEventListener('submit', async event => {
       searchStatus.textContent = 'Tìm thấy bài theo KID.';
       return;
     }
-    const params = new URLSearchParams({ filter: term, from: '0', size: '20' });
-    const payload = await jsonRequest(`${API}/karas/search?${params}`);
-    const items = payload.content || [];
+    const parsed = parseSearch(term);
+    if (!parsed.textWords.length) throw new Error('Nhập thêm tên anime hoặc tựa bài để tìm theo thể loại.');
+
+    // Search the whole phrase and its individual words so anime and song titles
+    // can appear in either order (and in different language fields).
+    const searchTerms = [...new Set([parsed.textWords.join(' '), ...parsed.textWords])].slice(0, 5);
+    const payloads = await Promise.all(searchTerms.map(async filter => {
+      const params = new URLSearchParams({ filter, from: '0', size: '100' });
+      return jsonRequest(`${API}/karas/search?${params}`);
+    }));
+    const itemsByKid = new Map(payloads.flatMap(payload => payload.content || []).map(kara => [kara.kid, kara]));
+    const items = filterKaraResults([...itemsByKid.values()], parsed)
+      .sort((left, right) => {
+        const leftSeries = [...(left.series || []), ...(left.franchises || [])].some(tag => parsed.textWords.join(' ').includes(normalizeSearchText(tag.name)));
+        const rightSeries = [...(right.series || []), ...(right.franchises || [])].some(tag => parsed.textWords.join(' ').includes(normalizeSearchText(tag.name)));
+        return Number(rightSeries) - Number(leftSeries) || resultTitle(left).localeCompare(resultTitle(right));
+      });
     showSearchResults(items);
-    searchStatus.textContent = items.length ? `Có ${items.length} kết quả. Chọn một bài để lấy video và subtitle timing.` : 'Không tìm thấy kết quả.';
+    searchStatus.textContent = items.length ? `Có ${items.length} kết quả${parsed.categories.size ? ` · ${[...parsed.categories].join('/')}` : ''}. Chọn một bài để lấy video và subtitle timing.` : 'Không tìm thấy kết quả phù hợp. Thử tựa bài, tên anime hoặc OP/ED/insert.';
   } catch (error) {
     searchStatus.textContent = error.message || 'Không thể kết nối kara.moe.';
   }
