@@ -336,7 +336,6 @@ function bindAnimeInfo() {
     const pending=readAlbum(false),openIds=openSongIds();
     await saveCurrent();renderAlbum(current,pending,openIds);notice('Đã lưu bản nháp anime.');
   });});
-  $('[name="titleLanguage"]').addEventListener('change',e=>{$('[name="title"]').value=current.data.titles?.[e.target.value]||current.data.titles?.romaji||current.data.title;animeDirty=true;syncEditorDirty();});
 }
 function renderEditor(entry) {
   animeDirty=false;songsDirty=false;
